@@ -1,8 +1,8 @@
 const portfolio = {
-    value: 0,
-    dailyPL: 125.43,
-    openPositions: 0,
-    optionsContracts: 0
+    value: 10,000,
+    dailyPL: 250,
+    openPositions: 4,
+    optionsContracts: 7
 };
 
 document.getElementById("portfolio-value").textContent =
