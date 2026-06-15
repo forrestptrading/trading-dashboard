@@ -17,10 +17,12 @@ h1 {
     text-align: center;
 }
 
-.card h2 {
-    color: #f5d0d0;
+.card h2,
+.card p,
+.card div,
+.card span {
+    color: #f8e7b5;
 }
-
 .profit {
     color: #00ff88;
     font-weight: bold;
