@@ -1,23 +1,22 @@
-<h1>Trading Dashboard</h1>
+body {
+    font-family: Arial, sans-serif;
+    background: #2b0f14;
+    color: white;
+    margin: 0;
+    padding: 20px;
+}
 
-<div class="card">
-  <h2>Portfolio Value</h2>
-  <p id="portfolio">$0.00</p>
-</div>
+.card {
+    background: #4a1620;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+}
 
-<div class="card">
-  <h2>Daily P/L</h2>
-  <p id="dailyPL">$0.00</p>
-</div>
+h1 {
+    text-align: center;
+}
 
-<div class="card">
-  <h2>Open Positions</h2>
-  <p id="positions">0</p>
-</div>
-
-<div class="card">
-  <h2>Options Contracts</h2>
-  <p id="options">0</p>
-</div>
-
-<script src="script.js"></script>
+.card h2 {
+    color: #f5d0d0;
+}
