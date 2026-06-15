@@ -66,3 +66,28 @@ h1 {
     color: #ff2d2d !important;
     font-weight: bold;
 }
+
+.watchlist-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.watchlist-row:last-child {
+    border-bottom: none;
+}
+
+.watchlist-row span:first-child {
+    font-weight: 600;
+    width: 70px;
+}
+
+.watchlist-row span:nth-child(2) {
+    opacity: 0.9;
+}
+
+.watchlist-row span:last-child {
+    font-weight: 700;
+}
