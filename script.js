@@ -1,5 +1,5 @@
 const portfolio = {
-    value: 10,000,
+    value: 10000,
     dailyPL: 250,
     openPositions: 4,
     optionsContracts: 7
