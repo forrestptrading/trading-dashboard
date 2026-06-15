@@ -15,9 +15,6 @@ document.getElementById("portfolio-value").textContent =
 document.getElementById("daily-pl").textContent =
     (portfolio.dailyPL >= 0 ? "+$" : "-$") + Math.abs(portfolio.dailyPL).toFixed(2);
 
-document.getElementById("open-positions").textContent =
-    portfolio.openPositions;
-
 document.getElementById("options-contracts").textContent =
     portfolio.optionsContracts;
 
