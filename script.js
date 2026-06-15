@@ -26,3 +26,18 @@ document.getElementById("buying-power").textContent =
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
+
+document.getElementById("summary-portfolio").textContent =
+    "$" + portfolio.value.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+document.getElementById("summary-daily-pl").textContent =
+    (portfolio.dailyPL >= 0 ? "+$" : "-$") + Math.abs(portfolio.dailyPL).toFixed(2);
+
+document.getElementById("summary-buying-power").textContent =
+    "$" + portfolio.buyingPower.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
