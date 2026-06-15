@@ -24,7 +24,7 @@ h1 {
     color: #f8f4ea;
 }
 .profit {
-    color: #00ff88;
+    color: #00ff88 !important;
     font-weight: bold;
 }
 
