@@ -1,25 +1,24 @@
 const portfolio = {
     value: 10000,
     dailyPL: 250,
+    buyingPower: 3500,
     openPositions: 4,
-    optionsContracts: 7,
-    buyingPower: 3500
+    optionsContracts: 7
 };
 
-function money(amount) {
-    return "$" + amount.toLocaleString(undefined, {
+function money(value) {
+    return "$" + value.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
 }
 
-function profitMoney(amount) {
-    return (amount >= 0 ? "+$" : "-$") + Math.abs(amount).toFixed(2);
+function profitMoney(value) {
+    return (value >= 0 ? "+$" : "-$") + Math.abs(value).toFixed(2);
 }
 
 function setText(id, value) {
     const element = document.getElementById(id);
-
     if (element) {
         element.textContent = value;
     }
@@ -27,12 +26,13 @@ function setText(id, value) {
 
 setText("portfolio-value", money(portfolio.value));
 setText("daily-pl", profitMoney(portfolio.dailyPL));
-setText("options-contracts", portfolio.optionsContracts);
 setText("buying-power", money(portfolio.buyingPower));
+setText("options-contracts", portfolio.optionsContracts);
 
 setText("summary-portfolio", money(portfolio.value));
 setText("summary-daily-pl", profitMoney(portfolio.dailyPL));
 setText("summary-buying-power", money(portfolio.buyingPower));
+
 function updateMarketStatus() {
     const now = new Date();
 
@@ -56,10 +56,20 @@ function updateMarketStatus() {
 
     const isWeekend = day === "Sat" || day === "Sun";
 
-    if (isWeekend || currentMinutes >= marketClose || currentMinutes < marketOpen) {
-        setText("market-status", "🔴 CLOSED");
+    const status = document.getElementById("market-status");
+
+    if (!status) return;
+
+    if (
+        isWeekend ||
+        currentMinutes >= marketClose ||
+        currentMinutes < marketOpen
+    ) {
+        status.textContent = "🔴 CLOSED";
+        status.className = "closed";
     } else {
-        setText("market-status", "🟢 OPEN");
+        status.textContent = "🟢 OPEN";
+        status.className = "profit";
     }
 }
 
