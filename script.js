@@ -6,8 +6,10 @@ const portfolio = {
 };
 
 document.getElementById("portfolio-value").textContent =
-    `$${portfolio.value.toFixed(2)}`;
-
+    `$${portfolio.value.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    })}`;
 document.getElementById("daily-pl").textContent =
     `${portfolio.dailyPL >= 0 ? "+" : ""}$${portfolio.dailyPL.toFixed(2)}`;
 
