@@ -3,6 +3,7 @@ const portfolio = {
     dailyPL: 250,
     openPositions: 4,
     optionsContracts: 7
+    buyingPower: 3500
 };
 
 document.getElementById("portfolio-value").textContent =
@@ -18,3 +19,9 @@ document.getElementById("open-positions").textContent =
 
 document.getElementById("options-contracts").textContent =
     portfolio.optionsContracts;
+
+document.getElementById("buying-power").textContent =
+    `$${portfolio.buyingPower.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    })}`;
