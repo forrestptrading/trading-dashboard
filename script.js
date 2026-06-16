@@ -434,7 +434,30 @@ function renderOptions() {
         setText("options-current-value", money(totalValue));
         setText("options-total-pl", profitMoney(totalPL));   
         setText("options-return", totalReturn.toFixed(1) + "%");
-        
+
+        const calls = savedOptions.filter(
+    option => option.type === "Call"
+).length;
+
+const puts = savedOptions.filter(
+    option => option.type === "Put"
+).length;
+
+let riskLevel = "Low";
+
+if (savedOptions.length >= 3) {
+    riskLevel = "Moderate";
+}
+
+if (savedOptions.length >= 6) {
+    riskLevel = "High";
+}
+
+setText("risk-contracts", savedOptions.length);
+setText("risk-calls", calls);
+setText("risk-puts", puts);
+setText("risk-exposure", money(totalCost));
+setText("risk-level", riskLevel);
         list.innerHTML += `
             <div class="option-card">
                 <div class="position-row">
