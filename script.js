@@ -110,3 +110,40 @@ const aiSignals = [
 ];
 
 let signalIndex = 0;
+function loadChart(symbol, name) {
+    const chartBox = document.getElementById("live-chart");
+    const chartTitle = document.getElementById("chart-title");
+
+    if (!chartBox || !chartTitle) return;
+
+    chartTitle.textContent = "📊 Live Chart: " + name;
+    chartBox.innerHTML = "";
+
+    const script = document.createElement("script");
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js";
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+        symbol: symbol,
+        width: "100%",
+        height: "100%",
+        locale: "en",
+        dateRange: "1D",
+        colorTheme: "dark",
+        isTransparent: true,
+        autosize: true
+    });
+
+    chartBox.appendChild(script);
+}
+
+function rotateAISignals() {
+    const current = aiSignals[signalIndex];
+
+    document.getElementById("ai-analysis").innerHTML = current.signal;
+    loadChart(current.symbol, current.name);
+
+    signalIndex = (signalIndex + 1) % aiSignals.length;
+}
+
+rotateAISignals();
+setInterval(rotateAISignals, 8000);
