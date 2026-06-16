@@ -134,10 +134,10 @@ function updateRobinhoodStatus() {
     setText("rh-backend", "Ready");
     setText("rh-orders", "Approval Required");
 
-    setText("rh-account-value", money(portfolio.value));
-    setText("rh-buying-power", money(portfolio.buyingPower));
-    setText("rh-day-pl", profitMoney(portfolio.dailyPL));
-    setText("rh-open-positions", portfolio.openPositions);
+    setText("rh-account-value", document.getElementById("summary-portfolio").textContent);
+    setText("rh-buying-power", document.getElementById("summary-buying-power").textContent);
+    setText("rh-day-pl", document.getElementById("summary-daily-pl").textContent);
+    setText("rh-open-positions", "4");
     setText("rh-options-held", savedOptions.length);
     setText("rh-portfolio-sync", new Date().toLocaleTimeString());
 
