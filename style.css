@@ -131,5 +131,33 @@ h1 {
 }
 #rh-status.disconnected {
     color: #ff4444;
-    text-shadow: 0 0 10px #ff4444;
+    text-shadow: 0 0 10px #ff4444;.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+    .action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.approve-btn,
+.reject-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.approve-btn {
+    background: #00d26a;
+    color: white;
+}
+
+.reject-btn {
+    background: #d62828;
+    color: white;
 }
