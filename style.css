@@ -170,5 +170,20 @@ h1 {
 /* Pending Trade Card */
 
 .pending-trade-card {
-    min-height: 250px;
+    grid-column: 1 / -1;
+    min-height: 320px;
+}
+
+.pending-trade-card .action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+    width: 100%;
+}
+
+.pending-trade-card .approve-btn,
+.pending-trade-card .reject-btn {
+    flex: 1;
+    min-height: 55px;
+    font-size: 16px;
 }
