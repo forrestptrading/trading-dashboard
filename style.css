@@ -124,15 +124,19 @@ h1 {
 }
 .chart-placeholder polyline {
     filter: drop-shadow(0 0 14px #00ff88);
-}
+}/* Robinhood Status */
+
 #rh-status.connected {
     color: #00ff88;
     text-shadow: 0 0 10px #00ff88;
 }
+
 #rh-status.disconnected {
     color: #ff4444;
     text-shadow: 0 0 10px #ff4444;
 }
+
+/* Trade Approval Buttons */
 
 .action-buttons {
     display: flex;
@@ -140,6 +144,7 @@ h1 {
     margin-top: 15px;
     width: 100%;
 }
+
 .approve-btn,
 .reject-btn {
     flex: 1;
@@ -149,4 +154,21 @@ h1 {
     font-weight: bold;
     font-size: 16px;
     min-height: 50px;
+    cursor: pointer;
+}
+
+.approve-btn {
+    background: #00d26a;
+    color: white;
+}
+
+.reject-btn {
+    background: #d62828;
+    color: white;
+}
+
+/* Pending Trade Card */
+
+.pending-trade-card {
+    min-height: 250px;
 }
