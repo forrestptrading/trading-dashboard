@@ -5,158 +5,164 @@
     <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
-<h1>📈 Forrest's Trading Terminal</h1>
+    <h1>📈 Forrest's Trading Terminal</h1>
 
-<div class="summary-bar">
-    <div>
-        <span>Portfolio</span>
-        <strong id="summary-portfolio">$0.00</strong>
+    <div class="summary-bar">
+        <div>
+            <span>Portfolio</span>
+            <strong id="summary-portfolio">$0.00</strong>
+        </div>
+
+        <div>
+            <span>Daily P/L</span>
+            <strong id="summary-daily-pl" class="profit">+$0.00</strong>
+        </div>
+
+        <div>
+            <span>Buying Power</span>
+            <strong id="summary-buying-power">$0.00</strong>
+        </div>
     </div>
 
-    <div>
-        <span>Daily P/L</span>
-        <strong id="summary-daily-pl" class="profit">+$0.00</strong>
-    </div>
-
-    <div>
-        <span>Buying Power</span>
-        <strong id="summary-buying-power">$0.00</strong>
-    </div>
-</div>
-
- <div class="card">
-    <h2>Portfolio Chart</h2>
-    <div class="chart-placeholder">
-<svg viewBox="0 0 400 120" width="100%" height="120">
-<polyline
-    fill="none"
-    stroke="#00ff88"
-    stroke-width="20"
-    opacity="0.35"
-    points="0,90 40,85 80,75 120,80 160,60 200,55 240,45 280,50 320,30 360,25 400,10" />
-<polyline
-    fill="none"
-    stroke="#00ff88"
-    stroke-width="4"
-    points="0,90 40,85 80,75 120,80 160,60 200,55 240,45 280,50 320,30 360,25 400,10" />
-</svg>
-</div>
-    </div>
-</div>
     <div class="card">
-    <h2>Daily P/L</h2>
-    <p id="daily-pl" class="profit">+$0.00</p>
-</div>
+        <h2>Portfolio Chart</h2>
+        <div class="chart-placeholder">
+            <svg viewBox="0 0 400 120" width="100%" height="120">
+                <polyline
+                    fill="none"
+                    stroke="#00ff88"
+                    stroke-width="20"
+                    opacity="0.35"
+                    points="0,90 40,85 80,75 120,80 160,60 200,55 240,45 280,50 320,30 360,25 400,10" />
 
-<div class="card">
-    <h2>Buying Power</h2>
-    <p id="buying-power">$0.00</p>
-</div>
-
-<div class="card">
-    <h2>Portfolio Value</h2>
-    <p id="portfolio-value">$0.00</p>
-</div>
-
-<div class="card">
-    <h2>Open Positions</h2>
-
-    <div class="position-row">
-    <span>SPY 620C</span>
-    <span>6/20</span>
-    <span class="profit">+$125.00</span>
-</div>
-
-<div class="position-row">
-    <span>TSLA 350C</span>
-    <span>6/27</span>
-    <span class="loss">-$45.00</span>
-</div>
-
-<div class="position-row">
-    <span>NVDA Shares</span>
-    <span>3 Shares</span>
-    <span class="profit">+$18.00</span>
-</div>
-</div>
-
-<div class="card">
-    <h2>Options Contracts</h2>
-    <p id="options-contracts">0</p>
-</div>
-<div class="card">
-    <h2>Market Status</h2>
-    <p id="market-status" class="profit">🟢 OPEN</p>
-    <p id="market-time">9:30 AM - 4:00 PM ET</p>
-</div>
-<div class="card">
-    <h2>Watchlist</h2>
-
-    <div class="watchlist-row">
-        <span>TSLA</span>
-        <span>$342.15</span>
-        <span class="profit">+2.31%</span>
+                <polyline
+                    fill="none"
+                    stroke="#00ff88"
+                    stroke-width="4"
+                    points="0,90 40,85 80,75 120,80 160,60 200,55 240,45 280,50 320,30 360,25 400,10" />
+            </svg>
+        </div>
     </div>
 
-    <div class="watchlist-row">
-        <span>NVDA</span>
-        <span>$181.42</span>
-        <span class="loss">-0.84%</span>
-    </div>
-
-    <div class="watchlist-row">
-        <span>SPY</span>
-        <span>$603.20</span>
-        <span class="profit">+0.42%</span>
-    </div>
-
-    <div class="watchlist-row">
-        <span>PLTR</span>
-        <span>$138.75</span>
-        <span class="profit">+1.92%</span>
-    </div>
-</div>
     <div class="card">
-    <h2>Portfolio Allocation</h2>
-
-    <div class="position-row">
-        <span>Stocks</span>
-        <span>65%</span>
+        <h2>Daily P/L</h2>
+        <p id="daily-pl" class="profit">+$0.00</p>
     </div>
 
-    <div class="position-row">
-        <span>Options</span>
-        <span>25%</span>
-    </div>
-
-    <div class="position-row">
-        <span>Cash</span>
-        <span>10%</span>
-    </div>
-</div>
     <div class="card">
-    <h2>Portfolio Performance</h2>
-
-    <div class="position-row">
-        <span>1 Day</span>
-        <span class="profit">+$125</span>
+        <h2>Buying Power</h2>
+        <p id="buying-power">$0.00</p>
     </div>
 
-    <div class="position-row">
-        <span>1 Week</span>
-        <span class="profit">+$420</span>
+    <div class="card">
+        <h2>Portfolio Value</h2>
+        <p id="portfolio-value">$0.00</p>
     </div>
 
-    <div class="position-row">
-        <span>1 Month</span>
-        <span class="profit">+$1,180</span>
+    <div class="card">
+        <h2>Open Positions</h2>
+
+        <div class="position-row">
+            <span>SPY 620C</span>
+            <span>6/20</span>
+            <span class="profit">+$125.00</span>
+        </div>
+
+        <div class="position-row">
+            <span>TSLA 350C</span>
+            <span>6/27</span>
+            <span class="loss">-$45.00</span>
+        </div>
+
+        <div class="position-row">
+            <span>NVDA Shares</span>
+            <span>3 Shares</span>
+            <span class="profit">+$18.00</span>
+        </div>
     </div>
 
-    <div class="position-row">
-        <span>YTD</span>
-        <span class="profit">+$2,450</span>
+    <div class="card">
+        <h2>Options Contracts</h2>
+        <p id="options-contracts">0</p>
     </div>
-</div>
-    <script src="script.js?v=12"></script>
+
+    <div class="card">
+        <h2>Market Status</h2>
+        <p id="market-status" class="profit">🟢 OPEN</p>
+        <p id="market-time">9:30 AM - 4:00 PM ET</p>
+    </div>
+
+    <div class="card">
+        <h2>Watchlist</h2>
+
+        <div class="watchlist-row">
+            <span>TSLA</span>
+            <span>$342.15</span>
+            <span class="profit">+2.31%</span>
+        </div>
+
+        <div class="watchlist-row">
+            <span>NVDA</span>
+            <span>$181.42</span>
+            <span class="loss">-0.84%</span>
+        </div>
+
+        <div class="watchlist-row">
+            <span>SPY</span>
+            <span>$603.20</span>
+            <span class="profit">+0.42%</span>
+        </div>
+
+        <div class="watchlist-row">
+            <span>PLTR</span>
+            <span>$138.75</span>
+            <span class="profit">+1.92%</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Portfolio Allocation</h2>
+
+        <div class="position-row">
+            <span>Stocks</span>
+            <span>65%</span>
+        </div>
+
+        <div class="position-row">
+            <span>Options</span>
+            <span>25%</span>
+        </div>
+
+        <div class="position-row">
+            <span>Cash</span>
+            <span>10%</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Portfolio Performance</h2>
+
+        <div class="position-row">
+            <span>1 Day</span>
+            <span class="profit">+$125</span>
+        </div>
+
+        <div class="position-row">
+            <span>1 Week</span>
+            <span class="profit">+$420</span>
+        </div>
+
+        <div class="position-row">
+            <span>1 Month</span>
+            <span class="profit">+$1,180</span>
+        </div>
+
+        <div class="position-row">
+            <span>YTD</span>
+            <span class="profit">+$2,450</span>
+        </div>
+    </div>
+
+    <script src="script.js?v=13"></script>
 </body>
 </html>
