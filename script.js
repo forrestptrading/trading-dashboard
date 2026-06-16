@@ -63,6 +63,10 @@ const aiSignals = [
 let signalIndex = 0;
 let currentTradeSymbol = "AGQ";
 
+let tradeJournal = JSON.parse(
+    localStorage.getItem("tradeJournal")
+) || [];
+
 function money(value) {
     return "$" + value.toLocaleString(undefined, {
         minimumFractionDigits: 2,
@@ -216,6 +220,20 @@ function approveTrade() {
     }
 
     localStorage.setItem("tradeStatus_" + currentTradeSymbol, "Approved");
+
+    tradeJournal.unshift({
+        date: new Date().toLocaleDateString(),
+        symbol: currentTradeSymbol,
+        idea: document.getElementById("pending-trade-idea").textContent,
+        confidence: document.getElementById("pending-confidence").textContent,
+        risk: document.getElementById("pending-risk").textContent,
+        status: "Approved"
+    });
+
+    localStorage.setItem(
+        "tradeJournal",
+        JSON.stringify(tradeJournal)
+    );
 }
 
 function rejectTrade() {
@@ -229,6 +247,26 @@ function rejectTrade() {
     localStorage.setItem("tradeStatus_" + currentTradeSymbol, "Rejected");
 }
 
+function renderTradeJournal() {
+    const list = document.getElementById("trade-journal-list");
+    if (!list) return;
+
+    if (tradeJournal.length === 0) {
+        list.innerHTML = "No trades recorded yet.";
+        return;
+    }
+
+    list.innerHTML = "";
+
+    tradeJournal.forEach((trade) => {
+        list.innerHTML += `
+            <div class="position-row">
+                <span>${trade.date} — ${trade.idea}</span>
+                <span class="${trade.status === "Approved" ? "profit" : "loss"}">${trade.status}</span>
+            </div>
+        `;
+    });
+}
 function loadSavedTradeStatus() {
     const savedStatus = localStorage.getItem(
     "tradeStatus_" + currentTradeSymbol
@@ -357,5 +395,6 @@ loadSavedTradeStatus();
 rotateAISignals();
 loadPortfolioInputs();
 renderOptions();
+renderTradeJournal();
 
 setInterval(rotateAISignals, 8000);
