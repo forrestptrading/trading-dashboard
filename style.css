@@ -131,18 +131,15 @@ h1 {
 }
 #rh-status.disconnected {
     color: #ff4444;
-    text-shadow: 0 0 10px #ff4444;.action-buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
+    text-shadow: 0 0 10px #ff4444;
 }
-  .action-buttons {
+
+.action-buttons {
     display: flex;
     gap: 12px;
     margin-top: 15px;
     width: 100%;
 }
-
 .approve-btn,
 .reject-btn {
     flex: 1;
