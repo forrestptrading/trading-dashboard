@@ -334,14 +334,22 @@ function renderOptions() {
     const list = document.getElementById("options-list");
     if (!list) return;
 
+    if (savedOptions.length === 0) {
+        list.innerHTML = "No options added yet.";
+        return;
+    }
+
     list.innerHTML = "";
 
     savedOptions.forEach((option, index) => {
         const cost = Number(option.cost);
         const current = Number(option.current);
 
-        const profitLoss = (current - cost) * 100;
+        const totalCost = cost * 100;
+        const currentValue = current * 100;
+        const profitLoss = currentValue - totalCost;
         const returnPercent = cost > 0 ? ((current - cost) / cost) * 100 : 0;
+
         const plClass = profitLoss >= 0 ? "profit" : "loss";
         const sign = profitLoss >= 0 ? "+" : "-";
 
@@ -353,13 +361,13 @@ function renderOptions() {
                 </div>
 
                 <div class="position-row">
-                    <span>Cost</span>
-                    <span>$${cost.toFixed(2)}</span>
+                    <span>Cost Basis</span>
+                    <span>$${totalCost.toFixed(2)}</span>
                 </div>
 
                 <div class="position-row">
-                    <span>Current</span>
-                    <span>$${current.toFixed(2)}</span>
+                    <span>Current Value</span>
+                    <span>$${currentValue.toFixed(2)}</span>
                 </div>
 
                 <div class="position-row">
