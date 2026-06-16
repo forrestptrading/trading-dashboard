@@ -122,7 +122,6 @@ h1 {
 .chart-placeholder svg {
     overflow: visible;
 }
-
 .chart-placeholder polyline {
-    filter: drop-shadow(0 0 8px #00ff88);
+    filter: drop-shadow(0 0 14px #00ff88);
 }
