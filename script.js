@@ -83,27 +83,27 @@ Risk Level: Moderate
 
 const aiSignals = [
     {
-        symbol: "NYSEARCA:AGQ",
+        symbol: "AGQ",
         name: "AGQ",
         signal: "Market Bias: Silver Bullish<br>Top Watch: AGQ<br>Confidence: 82%<br>Risk Level: High"
     },
     {
-        symbol: "NYSEARCA:SPCX",
+        symbol: "SPCX",
         name: "SPCX",
         signal: "Market Bias: Space Sector Watch<br>Top Watch: SPCX<br>Confidence: 68%<br>Risk Level: High"
     },
     {
-        symbol: "NASDAQ:TSLA",
+        symbol: "TSLA",
         name: "TSLA",
         signal: "Market Bias: Momentum Building<br>Top Watch: TSLA<br>Confidence: 74%<br>Risk Level: Moderate"
     },
     {
-        symbol: "NASDAQ:NVDA",
+        symbol: "NVDA",
         name: "NVDA",
         signal: "Market Bias: AI Leadership<br>Top Watch: NVDA<br>Confidence: 86%<br>Risk Level: Moderate"
     },
     {
-        symbol: "NYSEARCA:IWM",
+        symbol: "IWM",
         name: "IWM",
         signal: "Market Bias: Small Caps Improving<br>Top Watch: IWM<br>Confidence: 71%<br>Risk Level: Moderate"
     }
