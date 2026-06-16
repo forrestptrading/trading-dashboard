@@ -385,10 +385,11 @@ function loadPortfolioInputs() {
     if (savedBuyingPower) buyingPowerInput.value = savedBuyingPower;
 
     function updateValues() {
-        portfolioDisplay.textContent = "$" + Number(portfolioInput.value).toLocaleString();
-        dailyDisplay.textContent = "$" + Number(dailyInput.value).toLocaleString();
-        buyingPowerDisplay.textContent = "$" + Number(buyingPowerInput.value).toLocaleString();
-
+  portfolioDisplay.textContent = "$" + portfolioInput.value;
+  dailyDisplay.textContent = "+$" + dailyInput.value;
+  buyingPowerDisplay.textContent = "$" + buyingPowerInput.value;
+}
+    
         localStorage.setItem("portfolioValue", portfolioInput.value);
         localStorage.setItem("dailyPL", dailyInput.value);
         localStorage.setItem("buyingPower", buyingPowerInput.value);
