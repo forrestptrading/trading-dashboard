@@ -74,3 +74,12 @@ function updateMarketStatus() {
 }
 
 updateMarketStatus();
+document.getElementById("ai-status").textContent =
+"AI Status: Ready";
+
+document.getElementById("ai-summary").innerHTML = `
+Market Bias: Bullish<br>
+Top Watch: NVDA<br>
+Confidence: 78%<br>
+Risk Level: Moderate
+`;
