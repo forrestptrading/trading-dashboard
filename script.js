@@ -17,7 +17,7 @@ const aiSignals = [
         symbol: "AGQ",
         name: "AGQ",
         signal: "Market Bias: Silver Bullish<br>Top Watch: AGQ<br>Confidence: 82%<br>Risk Level: High",
-        optionConfidence: "82%".
+        optionConfidence: "82%",
         tradeIdea: "AGQ Call",
         tradeConfidence: "82%",
         tradeRisk: "High"
