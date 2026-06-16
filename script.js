@@ -60,17 +60,13 @@ function profitMoney(value) {
 
 function setText(id, value) {
     const element = document.getElementById(id);
+
     if (element) {
         element.textContent = value;
     }
 }
 
 function updatePortfolio() {
-    setText("portfolio-value", money(portfolio.value));
-    setText("daily-pl", profitMoney(portfolio.dailyPL));
-    setText("buying-power", money(portfolio.buyingPower));
-    setText("options-contracts", portfolio.optionsContracts);
-
     setText("summary-portfolio", money(portfolio.value));
     setText("summary-daily-pl", profitMoney(portfolio.dailyPL));
     setText("summary-buying-power", money(portfolio.buyingPower));
@@ -82,6 +78,7 @@ function updateRobinhoodStatus() {
     setText("rh-update", robinhood.lastUpdate);
 
     const status = document.getElementById("rh-status");
+
     if (status) {
         status.className = robinhood.connected ? "connected" : "disconnected";
     }
@@ -107,18 +104,13 @@ function updateMarketStatus() {
     const currentMinutes = hour * 60 + minute;
     const marketOpen = 9 * 60 + 30;
     const marketClose = 16 * 60;
-
     const isWeekend = day === "Sat" || day === "Sun";
 
     const status = document.getElementById("market-status");
 
     if (!status) return;
 
-    if (
-        isWeekend ||
-        currentMinutes >= marketClose ||
-        currentMinutes < marketOpen
-    ) {
+    if (isWeekend || currentMinutes >= marketClose || currentMinutes < marketOpen) {
         status.textContent = "🔴 CLOSED";
         status.className = "closed";
     } else {
@@ -181,9 +173,27 @@ function rotateAISignals() {
     signalIndex = (signalIndex + 1) % aiSignals.length;
 }
 
+function approveTrade() {
+    const status = document.getElementById("trade-status");
+
+    if (status) {
+        status.textContent = "Approved";
+        status.className = "approved";
+    }
+}
+
+function rejectTrade() {
+    const status = document.getElementById("trade-status");
+
+    if (status) {
+        status.textContent = "Rejected";
+        status.className = "rejected";
+    }
+}
+
 updatePortfolio();
 updateRobinhoodStatus();
 updateMarketStatus();
-
 rotateAISignals();
+
 setInterval(rotateAISignals, 8000);
