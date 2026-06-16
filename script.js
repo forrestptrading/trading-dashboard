@@ -274,11 +274,65 @@ function loadPortfolioInputs() {
     updateValues();
 }
 
+let savedOptions = JSON.parse(localStorage.getItem("optionsTracker")) || [];
+
+function saveOptions() {
+    localStorage.setItem("optionsTracker", JSON.stringify(savedOptions));
+}
+
+function renderOptions() {
+    const list = document.getElementById("options-list");
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    savedOptions.forEach((option, index) => {
+        const pl = (option.current - option.cost) * 100;
+        const plClass = pl >= 0 ? "profit" : "loss";
+
+        list.innerHTML += `
+            <div class="position-row">
+                <span>${option.symbol} ${option.strike} ${option.type} ${option.expiration}</span>
+                <span class="${plClass}">$${pl.toFixed(2)}</span>
+                <button onclick="deleteOption(${index})">Delete</button>
+            </div>
+        `;
+    });
+}
+
+function addOption() {
+    const symbol = document.getElementById("option-symbol").value;
+    const strike = document.getElementById("option-strike").value;
+    const type = document.getElementById("option-type").value;
+    const expiration = document.getElementById("option-expiration").value;
+    const cost = Number(document.getElementById("option-cost").value);
+    const current = Number(document.getElementById("option-current").value);
+
+    savedOptions.push({
+        symbol,
+        strike,
+        type,
+        expiration,
+        cost,
+        current
+    });
+
+    saveOptions();
+    renderOptions();
+}
+
+function deleteOption(index) {
+    savedOptions.splice(index, 1);
+    saveOptions();
+    renderOptions();
+}
+
 updatePortfolio();
 updateRobinhoodStatus();
 updateMarketStatus();
 loadSavedTradeStatus();
 rotateAISignals();
 loadPortfolioInputs();
+renderOptions();
 
 setInterval(rotateAISignals, 8000);
