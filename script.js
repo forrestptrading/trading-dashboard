@@ -331,6 +331,8 @@ function saveOptions() {
 }
 
 function renderOptions() {
+    let totalCost = 0;
+    let totalValue = 0;
     const list = document.getElementById("options-list");
     if (!list) return;
 
@@ -345,14 +347,27 @@ function renderOptions() {
         const cost = Number(option.cost);
         const current = Number(option.current);
 
-        const totalCost = cost * 100;
+        const totalCostPosition = cost * 100;
         const currentValue = current * 100;
+        totalCost += totalCostPosition;
+        totalValue += currentValue;
         const profitLoss = currentValue - totalCost;
         const returnPercent = cost > 0 ? ((current - cost) / cost) * 100 : 0;
 
         const plClass = profitLoss >= 0 ? "profit" : "loss";
         const sign = profitLoss >= 0 ? "+" : "-";
+        const totalPL = totalValue - totalCost;
+        const totalReturn =
+            totalCost > 0
+                ? ((totalValue - totalCost) / totalCost) * 100
+                : 0;
 
+        setText("options-contracts", savedOptions.length);
+        setText("options-total-cost", money(totalCost));
+        setText("options-current-value", money(totalValue));
+        setText("options-total-pl", profitMoney(totalPL));   
+        setText("options-return", totalReturn.toFixed(1) + "%");
+        
         list.innerHTML += `
             <div class="option-card">
                 <div class="position-row">
