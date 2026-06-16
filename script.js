@@ -287,14 +287,37 @@ function renderOptions() {
     list.innerHTML = "";
 
     savedOptions.forEach((option, index) => {
-        const pl = (option.current - option.cost) * 100;
-        const plClass = pl >= 0 ? "profit" : "loss";
+        const cost = Number(option.cost);
+        const current = Number(option.current);
+
+        const profitLoss = (current - cost) * 100;
+        const returnPercent = cost > 0 ? ((current - cost) / cost) * 100 : 0;
+        const plClass = profitLoss >= 0 ? "profit" : "loss";
+        const sign = profitLoss >= 0 ? "+" : "-";
 
         list.innerHTML += `
-            <div class="position-row">
-                <span>${option.symbol} ${option.strike} ${option.type} ${option.expiration}</span>
-                <span class="${plClass}">$${pl.toFixed(2)}</span>
-                <button onclick="deleteOption(${index})">Delete</button>
+            <div class="option-card">
+                <div class="position-row">
+                    <span>${option.symbol} ${option.strike} ${option.type} ${option.expiration}</span>
+                    <span class="${plClass}">${sign}$${Math.abs(profitLoss).toFixed(2)}</span>
+                </div>
+
+                <div class="position-row">
+                    <span>Cost</span>
+                    <span>$${cost.toFixed(2)}</span>
+                </div>
+
+                <div class="position-row">
+                    <span>Current</span>
+                    <span>$${current.toFixed(2)}</span>
+                </div>
+
+                <div class="position-row">
+                    <span>Return</span>
+                    <span class="${plClass}">${sign}${Math.abs(returnPercent).toFixed(1)}%</span>
+                </div>
+
+                <button type="button" onclick="deleteOption(${index})">Delete</button>
             </div>
         `;
     });
