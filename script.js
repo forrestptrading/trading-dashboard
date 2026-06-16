@@ -128,10 +128,18 @@ function updateRobinhoodStatus() {
     setText("rh-status", "Connected");
     setText("rh-sync", "Ready");
     setText("rh-update", new Date().toLocaleTimeString());
+
     setText("rh-mode", "Confirmation Required");
     setText("rh-source", "Robinhood MCP");
     setText("rh-backend", "Ready");
     setText("rh-orders", "Approval Required");
+
+    setText("rh-account-value", "$10,000.00");
+    setText("rh-buying-power", "$2,500.00");
+    setText("rh-day-pl", "+$125.00");
+    setText("rh-open-positions", "4");
+    setText("rh-options-held", savedOptions.length);
+    setText("rh-portfolio-sync", new Date().toLocaleTimeString());
 
     const status = document.getElementById("rh-status");
 
