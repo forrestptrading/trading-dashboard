@@ -6,6 +6,12 @@ const portfolio = {
     optionsContracts: 7
 };
 
+const robinhood = {
+    connected: false,
+    lastSync: "Waiting",
+    lastUpdate: "Never"
+};
+
 function money(value) {
     return "$" + value.toLocaleString(undefined, {
         minimumFractionDigits: 2,
