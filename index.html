@@ -2,9 +2,10 @@
 <html>
 <head>
     <title>Trading Dashboard</title>
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
+
     <h1>📈 Forrest's Trading Terminal</h1>
 
     <div class="summary-bar">
@@ -25,313 +26,191 @@
     </div>
 
     <div class="card">
-    <h2>🤖 AI Analysis</h2>
-    <p id="ai-analysis">Waiting for AI signal...</p>
-</div>
+        <h2>🤖 AI Analysis</h2>
+        <p id="ai-analysis">Waiting for AI signal...</p>
+    </div>
 
     <div class="card">
-    <h2>📊 Open Positions</h2>
-
-    <div class="position-row">
-        <span>NVDA 180 Call</span>
-        <span class="profit">+12.4%</span>
+        <h2 id="chart-title">📊 Live Chart: AGQ</h2>
+        <div id="live-chart"></div>
     </div>
-
-    <div class="position-row">
-        <span>IWM 286 Call</span>
-        <span class="loss">-1.1%</span>
-    </div>
-
-    <div class="position-row">
-        <span>TSLA Shares</span>
-        <span class="profit">+3.2%</span>
-    </div>
-</div>
-   
-    <div class="card">
-    <h2 id="chart-title">📊 Live Chart: AGQ</h2>
-    <div id="live-chart" style="height: 400px;"></div>
-</div>
-    
-    <div class="card">
-    <h2>📊 Portfolio Performance</h2>
-    <svg viewBox="0 0 300 120" class="mini-chart">
-        <polyline
-            fill="none"
-            stroke="#00ff88"
-            stroke-width="4"
-            points="0,95 40,80 80,85 120,60 160,65 200,40 240,35 300,20"
-        />
-    </svg>
-
-    <div class="position-row">
-        <span>Today</span>
-        <span class="profit">+2.5%</span>
-    </div>
-
-    <div class="position-row">
-        <span>1 Week</span>
-        <span class="profit">+8.1%</span>
-    </div>
-
-    <div class="position-row">
-        <span>1 Month</span>
-        <span class="profit">+14.7%</span>
-    </div>
-
-    <div class="position-row">
-        <span>YTD</span>
-        <span class="profit">+31.4%</span>
-    </div>
-</div>
-    
-    <div class="card">
-    <h2>🤖 AI Options Idea</h2>
-    <div id="option-idea">
-        Waiting for AI option setup...
-    </div>
-</div>
-    
-    <p style="margin-top: 15px; opacity: 0.8;">
-        Ideas are demo placeholders until real AI and Robinhood data are connected.
-    </p>
-</div>
 
     <div class="card">
-    <h2>🔗 Robinhood Integration</h2>
-
-    <div class="position-row">
-        <span>Status</span>
-        <span id="rh-status" class="loss">Disconnected</span>
-    </div>
-
-    <div class="position-row">
-        <span>Account Sync</span>
-        <span id="rh-sync">Waiting</span>
-    </div>
-
-    <div class="position-row">
-        <span>Last Update</span>
-        <span id="rh-update">Never</span>
-    </div>
-
-    <div class="position-row">
-        <span>Trade Mode</span>
-        <span>Confirmation Required</span>
-    </div>
-</div>
-
-    <div class="card">
-    <h2>AI Trade Assistant</h2>
-    <div id="ai-trade-assistant">
-        AI status: Not connected yet<br><br>
-        Future AI analysis will appear here.
-    </div>
-</div>
-
-    <div class="card pending-trade-card">
-    <h2>✅ Pending Trade Approval</h2>
-
-    <div class="position-row">
-        <span>Trade Idea</span>
-        <span>NVDA 180 Call</span>
-    </div>
-
-    <div class="position-row">
-        <span>Confidence</span>
-        <span class="profit">87%</span>
-    </div>
-
-    <div class="position-row">
-        <span>Risk</span>
-        <span>Moderate</span>
-   
-    <div class="action-buttons">
-    <button class="approve-btn">Approve Trade</button>
-    <button class="reject-btn">Reject Trade</button>
-</div>
-   
-    <div class="card">
-    <h2>📈 Watchlist</h2>
-
-    <div class="position-row">
-        <span>NVDA</span>
-        <span class="profit">+2.3%</span>
-    </div>
-
-    <div class="position-row">
-        <span>TSLA</span>
-        <span class="loss">-1.1%</span>
-    </div>
-
-    <div class="position-row">
-        <span>SPY</span>
-        <span class="profit">+0.4%</span>
-    </div>
+        <h2>📊 Portfolio Performance</h2>
+        <svg viewBox="0 0 300 120" class="mini-chart">
+            <polyline
+                fill="none"
+                stroke="#00ff88"
+                stroke-width="4"
+                points="0,95 40,80 80,85 120,60 160,65 200,40 240,35 300,20"
+            />
+        </svg>
 
         <div class="position-row">
-        <span>IWM</span>
-        <span class="profit">+0.8%</span>
-    </div>
-</div>
-   
-            <div class="card">
-    <h2>⚠️ Risk Analysis</h2>
-
-    <div class="position-row">
-        <span>Portfolio Risk</span>
-        <span>Moderate</span>
-    </div>
-
-    <div class="position-row">
-        <span>Options Exposure</span>
-        <span>68%</span>
-    </div>
-
-    <div class="position-row">
-        <span>Cash Allocation</span>
-        <span>35%</span>
-    </div>
-
-    <div class="position-row">
-        <span>Diversification</span>
-        <span>Good</span>
-    </div>
-</div>
-
-        <div class="position-row">
-            <span>SPY 620C</span>
-            <span>6/20</span>
-            <span class="profit">+$125.00</span>
-        </div>
-
-        <div class="position-row">
-            <span>TSLA 350C</span>
-            <span>6/27</span>
-            <span class="loss">-$45.00</span>
-        </div>
-
-        <div class="position-row">
-            <span>NVDA Shares</span>
-            <span>3 Shares</span>
-            <span class="profit">+$18.00</span>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Options Contracts</h2>
-        <p id="options-contracts">0</p>
-    </div>
-
-    <div class="card">
-        <h2>Market Status</h2>
-        <p id="market-status" class="profit">🟢 OPEN</p>
-        <p id="market-time">9:30 AM - 4:00 PM ET</p>
-    </div>
-
-    <div class="card">
-        <h2>Watchlist</h2>
-
-        <div class="watchlist-row">
-            <span>TSLA</span>
-            <span>$342.15</span>
-            <span class="profit">+2.31%</span>
-        </div>
-
-        <div class="watchlist-row">
-            <span>NVDA</span>
-            <span>$181.42</span>
-            <span class="loss">-0.84%</span>
-        </div>
-
-        <div class="watchlist-row">
-            <span>SPY</span>
-            <span>$603.20</span>
-            <span class="profit">+0.42%</span>
-        </div>
-
-        <div class="watchlist-row">
-            <span>PLTR</span>
-            <span>$138.75</span>
-            <span class="profit">+1.92%</span>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Portfolio Allocation</h2>
-
-        <div class="position-row">
-            <span>Stocks</span>
-            <span>65%</span>
-        </div>
-
-        <div class="position-row">
-            <span>Options</span>
-            <span>25%</span>
-        </div>
-
-        <div class="position-row">
-            <span>Cash</span>
-            <span>10%</span>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Portfolio Performance</h2>
-
-        <div class="position-row">
-            <span>1 Day</span>
-            <span class="profit">+$125</span>
+            <span>Today</span>
+            <span class="profit">+2.5%</span>
         </div>
 
         <div class="position-row">
             <span>1 Week</span>
-            <span class="profit">+$420</span>
+            <span class="profit">+8.1%</span>
         </div>
 
         <div class="position-row">
             <span>1 Month</span>
-            <span class="profit">+$1,180</span>
+            <span class="profit">+14.7%</span>
         </div>
 
         <div class="position-row">
             <span>YTD</span>
-            <span class="profit">+$2,450</span>
+            <span class="profit">+31.4%</span>
         </div>
     </div>
+
     <div class="card">
-    <h2>Risk Meter</h2>
-
-    <div class="position-row">
-        <span>Risk Score</span>
-        <span class="loss">72 / 100</span>
+        <h2>🤖 AI Options Idea</h2>
+        <div id="option-idea">Waiting for AI option setup...</div>
     </div>
 
-    <div class="risk-bar">
-        <div class="risk-fill"></div>
-    </div>
-
-    <p>Moderate Aggressive</p>
-</div>
     <div class="card">
-    <h2>Trade Signals</h2>
+        <h2>🔗 Robinhood Integration</h2>
 
-    <div class="position-row">
-        <span>NVDA</span>
-        <span class="profit">BUY</span>
+        <div class="position-row">
+            <span>Status</span>
+            <span id="rh-status" class="disconnected">Disconnected</span>
+        </div>
+
+        <div class="position-row">
+            <span>Account Sync</span>
+            <span id="rh-sync">Waiting</span>
+        </div>
+
+        <div class="position-row">
+            <span>Last Update</span>
+            <span id="rh-update">Never</span>
+        </div>
+
+        <div class="position-row">
+            <span>Trade Mode</span>
+            <span>Confirmation Required</span>
+        </div>
     </div>
 
-    <div class="position-row">
-        <span>TSLA</span>
-        <span>HOLD</span>
+    <div class="card">
+        <h2>🤖 AI Trade Assistant</h2>
+        <div id="ai-trade-assistant">
+            AI status: Not connected yet<br><br>
+            Future AI analysis will appear here.
+        </div>
     </div>
 
-    <div class="position-row">
-        <span>SPY</span>
-        <span class="loss">SELL</span>
-    </div>
-</div>
+    <div class="card pending-trade-card">
+        <h2>✅ Pending Trade Approval</h2>
 
-    <script src="script.js?v=25"></script>
+        <div class="position-row">
+            <span>Trade Idea</span>
+            <span>NVDA 180 Call</span>
+        </div>
+
+        <div class="position-row">
+            <span>Confidence</span>
+            <span class="profit">87%</span>
+        </div>
+
+        <div class="position-row">
+            <span>Risk</span>
+            <span>Moderate</span>
+        </div>
+
+        <div class="position-row">
+            <span>Status</span>
+            <span id="trade-status">Waiting</span>
+        </div>
+
+        <div class="action-buttons">
+            <button class="approve-btn" onclick="approveTrade()">Approve Trade</button>
+            <button class="reject-btn" onclick="rejectTrade()">Reject Trade</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📊 Open Positions</h2>
+
+        <div class="position-row">
+            <span>NVDA 180 Call</span>
+            <span class="profit">+12.4%</span>
+        </div>
+
+        <div class="position-row">
+            <span>IWM 286 Call</span>
+            <span class="loss">-1.1%</span>
+        </div>
+
+        <div class="position-row">
+            <span>TSLA Shares</span>
+            <span class="profit">+3.2%</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>⚠️ Risk Analysis</h2>
+
+        <div class="position-row">
+            <span>Portfolio Risk</span>
+            <span>Moderate</span>
+        </div>
+
+        <div class="position-row">
+            <span>Options Exposure</span>
+            <span>68%</span>
+        </div>
+
+        <div class="position-row">
+            <span>Cash Allocation</span>
+            <span>35%</span>
+        </div>
+
+        <div class="position-row">
+            <span>Diversification</span>
+            <span>Good</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📈 Watchlist</h2>
+
+        <div class="position-row">
+            <span>AGQ</span>
+            <span class="profit">+2.3%</span>
+        </div>
+
+        <div class="position-row">
+            <span>SPCX</span>
+            <span class="loss">-1.1%</span>
+        </div>
+
+        <div class="position-row">
+            <span>TSLA</span>
+            <span class="profit">+0.4%</span>
+        </div>
+
+        <div class="position-row">
+            <span>NVDA</span>
+            <span class="profit">+0.8%</span>
+        </div>
+
+        <div class="position-row">
+            <span>IWM</span>
+            <span class="profit">+0.6%</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Market Status</h2>
+        <p id="market-status">Checking...</p>
+        <p>9:30 AM - 4:00 PM ET</p>
+    </div>
+
+    <script src="script.js?v=30"></script>
 </body>
 </html>
