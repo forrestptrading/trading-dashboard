@@ -1,593 +1,197 @@
-const portfolio = {
-    value: 10000,
-    dailyPL: 250,
-    buyingPower: 3500,
-    openPositions: 4,
-    optionsContracts: 7
-};
-
-const robinhood = {
-    connected: false,
-    lastSync: "Waiting",
-    lastUpdate: "Never"
-};
-
-const aiSignals = [
-    {
-        symbol: "AGQ",
-        name: "AGQ",
-        signal: "Market Bias: Silver Bullish<br>Top Watch: AGQ<br>Confidence: 82%<br>Risk Level: High",
-        optionConfidence: "82%",
-        tradeIdea: "AGQ Call",
-        tradeConfidence: "82%",
-        tradeRisk: "High"
-    },
-    {
-        symbol: "SPCX",
-        name: "SPCX",
-        signal: "Market Bias: Space Sector Watch<br>Top Watch: SPCX<br>Confidence: 68%<br>Risk Level: High",
-        optionConfidence: "68%",
-        tradeIdea: "SPCX Call",
-        tradeConfidence: "68%",
-        tradeRisk: "Moderate"
-    },
-    {
-        symbol: "TSLA",
-        name: "TSLA",
-        signal: "Market Bias: Momentum Building<br>Top Watch: TSLA<br>Confidence: 76%<br>Risk Level: Moderate",
-        optionConfidence: "76%",
-        tradeIdea: "TSLA 350 Call",
-        tradeConfidence: "76%",
-        tradeRisk: "Moderate"
-    },
-    {
-        symbol: "NVDA",
-        name: "NVDA",
-        signal: "Market Bias: AI Leadership<br>Top Watch: NVDA<br>Confidence: 86%<br>Risk Level: Moderate",
-        optionConfidence: "86%",
-        tradeIdea: "NVDA 185 Call",
-        tradeConfidence: "86%",
-        tradeRisk: "Moderate"    
-    },
-    {
-        symbol: "IWM",
-        name: "IWM",
-        signal: "Market Bias: Small Caps Improving<br>Top Watch: IWM<br>Confidence: 71%<br>Risk Level: Moderate",
-        optionConfidence: "71%",
-        tradeIdea: "IWM 286 Call",
-        tradeConfidence: "79%",
-        tradeRisk: "Moderate"
+// ===== Helpers =====
+function $(id) {
+  return document.getElementById(id);
 }
-];
-
-let signalIndex = 0;
-let currentTradeSymbol = "AGQ";
-let autoTradeMap = {
-    "AGQ": {
-        strike: 130,
-        type: "Call",
-        expiration: "6/20",
-        cost: 0.50
-    },
-    "SPCX": {
-        strike: 28,
-        type: "Call",
-        expiration: "6/20",
-        cost: 0.35
-    },
-    "TSLA": {
-        strike: 350,
-        type: "Call",
-        expiration: "6/20",
-        cost: 1.20
-    },
-    "NVDA": {
-        strike: 185,
-        type: "Call",
-        expiration: "6/20",
-        cost: 0.90
-    },
-    "IWM": {
-        strike: 286,
-        type: "Call",
-        expiration: "6/20",
-        cost: 0.09
-    }
-};
-
-let tradeJournal = JSON.parse(
-    localStorage.getItem("tradeJournal")
-) || [];
 
 function money(value) {
-    return "$" + value.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
+  return "$" + Number(value || 0).toLocaleString();
 }
 
-function profitMoney(value) {
-    return (value >= 0 ? "+$" : "-$") + Math.abs(value).toFixed(2);
+function money2(value) {
+  return "$" + Number(value || 0).toFixed(2);
 }
 
-function setText(id, value) {
-    const element = document.getElementById(id);
 
-    if (element) {
-        element.textContent = value;
-    }
-}
+// ===== Top Summary Cards =====
+const inputPortfolio = $("input-portfolio");
+const inputDailyPL = $("input-daily-pl");
+const inputBuyingPower = $("input-buying-power");
 
-function updatePortfolio() {
-    setText("summary-portfolio", money(portfolio.value));
-    setText("summary-daily-pl", profitMoney(portfolio.dailyPL));
-    setText("summary-buying-power", money(portfolio.buyingPower));
-}
-
-function updateRobinhoodStatus() {
-    setText("rh-status", "Connected");
-    setText("rh-sync", "Ready");
-    setText("rh-update", new Date().toLocaleTimeString());
-
-    setText("rh-mode", "Confirmation Required");
-    setText("rh-source", "Robinhood MCP");
-    setText("rh-backend", "Ready");
-    setText("rh-orders", "Approval Required");
-
-    setText("rh-account-value", document.getElementById("summary-portfolio").textContent);
-    setText("rh-buying-power", document.getElementById("summary-buying-power").textContent);
-    setText("rh-day-pl", document.getElementById("summary-daily-pl").textContent);
-    setText("rh-open-positions", "4");
-    setText("rh-options-held", savedOptions.length);
-    setText("rh-portfolio-sync", new Date().toLocaleTimeString());
-
-    const status = document.getElementById("rh-status");
-
-    if (status) {
-        status.className = "connected";
-    }
-}
-
-function updateMarketStatus() {
-    const now = new Date();
-
-    const options = {
-        timeZone: "America/New_York",
-        hour: "numeric",
-        minute: "numeric",
-        hour12: false,
-        weekday: "short"
-    };
-
-    const parts = new Intl.DateTimeFormat("en-US", options).formatToParts(now);
-
-    const day = parts.find(part => part.type === "weekday").value;
-    const hour = Number(parts.find(part => part.type === "hour").value);
-    const minute = Number(parts.find(part => part.type === "minute").value);
-
-    const currentMinutes = hour * 60 + minute;
-    const marketOpen = 9 * 60 + 30;
-    const marketClose = 16 * 60;
-    const isWeekend = day === "Sat" || day === "Sun";
-
-    const status = document.getElementById("market-status");
-
-    if (!status) return;
-
-    if (isWeekend || currentMinutes >= marketClose || currentMinutes < marketOpen) {
-        status.textContent = "🔴 CLOSED";
-        status.className = "closed";
-    } else {
-        status.textContent = "🟢 OPEN";
-        status.className = "profit";
-    }
-}
-
-function loadChart(symbol, name) {
-    const chartBox = document.getElementById("live-chart");
-    const chartTitle = document.getElementById("chart-title");
-
-    if (!chartBox || !chartTitle) return;
-
-    chartTitle.textContent = "📊 Live Chart: " + name;
-    chartBox.innerHTML = "";
-
-    const script = document.createElement("script");
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js";
-    script.async = true;
-
-    script.innerHTML = JSON.stringify({
-        symbol: symbol,
-        width: "100%",
-        height: "100%",
-        locale: "en",
-        dateRange: "1D",
-        colorTheme: "dark",
-        isTransparent: true,
-        autosize: true
-    });
-
-    chartBox.appendChild(script);
-}
-
-function rotateAISignals() {
-    const current = aiSignals[signalIndex];
-    currentTradeSymbol = current.name;
-    
-    const aiAnalysis = document.getElementById("ai-analysis");
-    const optionIdea = document.getElementById("option-idea");
-
-    if (aiAnalysis) {
-        aiAnalysis.innerHTML = current.signal;
-    }
-
-    if (optionIdea) {
-        optionIdea.innerHTML = `
-            <div class="position-row">
-                <span>${current.name} Call Idea</span>
-                <span class="profit">${current.optionConfidence}</span>
-            </div>
-            <p style="margin-top: 15px; opacity: 0.8;">
-                Demo setup rotating with the live chart. Real contract data will come later.
-            </p>
-        `;
-    }
-
-    loadChart(current.symbol, current.name);
-
-    const tradeIdea = document.getElementById("pending-trade-idea");
-    const tradeConfidence = document.getElementById("pending-confidence");
-    const tradeRisk = document.getElementById("pending-risk");
-    
-    if (tradeIdea) {
-    tradeIdea.textContent = current.tradeIdea;
-}
-
-    if (tradeConfidence) {
-        tradeConfidence.textContent = current.tradeConfidence;
-}
-
-    if (tradeRisk) {
-    tradeRisk.textContent = current.tradeRisk;
-}
-    loadSavedTradeStatus();
-    
-    signalIndex = (signalIndex + 1) % aiSignals.length;
-}
-
-function approveTrade() {
-    const status = document.getElementById("trade-status");
-
-    if (status) {
-        status.textContent = "Approved";
-        status.className = "approved";
-    }
-
-    localStorage.setItem("tradeStatus_" + currentTradeSymbol, "Approved");
-
-    tradeJournal.unshift({
-        date: new Date().toLocaleDateString(),
-        symbol: currentTradeSymbol,
-        idea: document.getElementById("pending-trade-idea").textContent,
-        confidence: document.getElementById("pending-confidence").textContent,
-        risk: document.getElementById("pending-risk").textContent,
-        status: "Approved"
-    });
-
-    localStorage.setItem(
-        "tradeJournal",
-        JSON.stringify(tradeJournal)
-    );
-    const autoTrade = autoTradeMap[currentTradeSymbol];
-
-    if (autoTrade) {
-        const alreadyExists = savedOptions.some(
-        option =>
-            option.symbol === currentTradeSymbol &&
-            option.strike === autoTrade.strike &&
-            option.type === autoTrade.type &&
-            option.expiration === autoTrade.expiration
-        );
-    
-        if (alreadyExists) {
-            renderOptions();    
-            renderTradeJournal();
-            return;
-        }
-        savedOptions.push({
-     
-        symbol: currentTradeSymbol,
-        strike: autoTrade.strike,
-        type: autoTrade.type,
-        expiration: autoTrade.expiration,
-        cost: autoTrade.cost,
-        current: autoTrade.cost
-    });
-
-    localStorage.setItem(
-        "optionsTracker",
-        JSON.stringify(savedOptions)
-    );
-
-    renderOptions();
-}
-    renderTradeJournal();
-}
-
-function rejectTrade() {
-    const status = document.getElementById("trade-status");
-
-    if (status) {
-        status.textContent = "Rejected";
-        status.className = "rejected";
-    }
-
-    localStorage.setItem("tradeStatus_" + currentTradeSymbol, "Rejected");
-
-    tradeJournal = tradeJournal.filter(
-        trade => trade.symbol !== currentTradeSymbol
-    );
-
-    localStorage.setItem(
-        "tradeJournal",
-        JSON.stringify(tradeJournal)
-    );
-
-    renderTradeJournal();
-}
-
-function renderTradeJournal() {
-    const list = document.getElementById("trade-journal-list");
-    if (!list) return;
-
-    if (tradeJournal.length === 0) {
-        list.innerHTML = "No trades recorded yet.";
-        return;
-    }
-
-    list.innerHTML = "";
-
-    tradeJournal.forEach((trade) => {
-        list.innerHTML += `
-            <div class="position-row">
-                <span>${trade.date} — ${trade.idea}</span>
-                <span class="${trade.status === "Approved" ? "profit" : "loss"}">${trade.status}</span>
-            </div>
-        `;
-    });
-}
-function loadSavedTradeStatus() {
-    const savedStatus = localStorage.getItem(
-    "tradeStatus_" + currentTradeSymbol
-);
-    const status = document.getElementById("trade-status");
-
-    if (!status || !savedStatus) return;
-
-    status.textContent = savedStatus;
-    status.className = savedStatus === "Approved" ? "approved" : "rejected";
-}
-
-function loadPortfolioInputs() {
-  const portfolioInput = document.getElementById("input-portfolio");
-  const dailyInput = document.getElementById("input-daily-pl");
-  const buyingPowerInput = document.getElementById("input-buying-power");
-
-  const portfolioDisplay = document.getElementById("summary-portfolio");
-  const dailyDisplay = document.getElementById("summary-daily-pl");
-  const buyingPowerDisplay = document.getElementById("summary-buying-power");
-
-  function updateValues() {
-    portfolioDisplay.textContent = "$" + portfolioInput.value;
-    dailyDisplay.textContent = "+$" + dailyInput.value;
-    buyingPowerDisplay.textContent = "$" + buyingPowerInput.value;
-
-    localStorage.setItem("portfolioValue", portfolioInput.value);
-    localStorage.setItem("dailyPL", dailyInput.value);
-    localStorage.setItem("buyingPower", buyingPowerInput.value);
+function updateTopCards() {
+  if ($("summary-portfolio") && inputPortfolio) {
+    $("summary-portfolio").textContent = money(inputPortfolio.value);
   }
 
-  portfolioInput.addEventListener("input", updateValues);
-  dailyInput.addEventListener("input", updateValues);
-  buyingPowerInput.addEventListener("input", updateValues);
+  if ($("summary-daily-pl") && inputDailyPL) {
+    $("summary-daily-pl").textContent = "+$" + Number(inputDailyPL.value || 0).toLocaleString();
+  }
 
-  updateValues();
+  if ($("summary-buying-power") && inputBuyingPower) {
+    $("summary-buying-power").textContent = money(inputBuyingPower.value);
+  }
 }
 
-loadPortfolioInputs();
+if (inputPortfolio) inputPortfolio.addEventListener("input", updateTopCards);
+if (inputDailyPL) inputDailyPL.addEventListener("input", updateTopCards);
+if (inputBuyingPower) inputBuyingPower.addEventListener("input", updateTopCards);
 
-localStorage.setItem("portfolioValue", portfolioInput.value);
-        localStorage.setItem("dailyPL", dailyInput.value);
-        localStorage.setItem("buyingPower", buyingPowerInput.value);
-    }
+updateTopCards();
 
-    portfolioInput.addEventListener("input", updateValues);
-    dailyInput.addEventListener("input", updateValues);
-    buyingPowerInput.addEventListener("input", updateValues);
 
-    updateValues();
+// ===== AI Analysis =====
+if ($("ai-analysis")) {
+  $("ai-analysis").innerHTML = `
+    Market Bias: Space Sector Watch<br>
+    Top Watch: SPCX<br>
+    Confidence: 68%<br>
+    Risk Level: High
+  `;
 }
 
-let savedOptions = JSON.parse(localStorage.getItem("optionsTracker")) || [];
 
-function saveOptions() {
-    localStorage.setItem("optionsTracker", JSON.stringify(savedOptions));
+// ===== AI Options Idea =====
+const ideas = [
+  ["TSLA Call Idea", "76%"],
+  ["NVDA Call Idea", "86%"],
+  ["SPY Momentum Idea", "72%"]
+];
+
+let ideaIndex = 0;
+
+function updateIdea() {
+  if (!$("option-idea")) return;
+
+  const idea = ideas[ideaIndex];
+
+  $("option-idea").innerHTML = `
+    <div class="position-row">
+      <span><strong>${idea[0]}</strong></span>
+      <strong class="profit">${idea[1]}</strong>
+    </div>
+    <p>Demo setup rotating with the live chart. Real contract data will come later.</p>
+  `;
+
+  ideaIndex = (ideaIndex + 1) % ideas.length;
 }
+
+updateIdea();
+setInterval(updateIdea, 5000);
+
+
+// ===== Options Portfolio =====
+function updateOptionsPortfolio() {
+  const contracts = 1;
+  const totalCost = 9;
+  const currentValue = 25;
+  const profit = currentValue - totalCost;
+  const returnPercent = ((profit / totalCost) * 100).toFixed(1);
+
+  if ($("options-contracts")) $("options-contracts").textContent = contracts;
+  if ($("options-total-cost")) $("options-total-cost").textContent = money2(totalCost);
+  if ($("options-current-value")) $("options-current-value").textContent = money2(currentValue);
+  if ($("options-pl")) $("options-pl").textContent = "+$" + profit.toFixed(2);
+  if ($("options-return")) $("options-return").textContent = returnPercent + "%";
+
+  if ($("risk-contracts")) $("risk-contracts").textContent = contracts;
+  if ($("risk-calls")) $("risk-calls").textContent = "1";
+  if ($("risk-puts")) $("risk-puts").textContent = "0";
+  if ($("risk-exposure")) $("risk-exposure").textContent = money2(totalCost);
+  if ($("risk-level")) $("risk-level").textContent = "High";
+}
+
+updateOptionsPortfolio();
+
+
+// ===== Robinhood Integration =====
+if ($("rh-status")) {
+  $("rh-status").textContent = "Connected";
+  $("rh-status").className = "connected";
+}
+
+if ($("rh-sync")) $("rh-sync").textContent = "Waiting";
+if ($("rh-update")) $("rh-update").textContent = "Never";
+if ($("rh-mode")) $("rh-mode").textContent = "Confirmation Required";
+if ($("rh-source")) $("rh-source").textContent = "Demo Mode";
+if ($("rh-backend")) $("rh-backend").textContent = "Not Connected";
+if ($("rh-orders")) $("rh-orders").textContent = "Approval Only";
+
+if ($("rh-account-value")) $("rh-account-value").textContent = "$0.00";
+if ($("rh-buying-power")) $("rh-buying-power").textContent = "$0.00";
+if ($("rh-day-pl")) $("rh-day-pl").textContent = "$0.00";
+
+
+// ===== Options Tracker =====
+let options = [];
 
 function renderOptions() {
-    let totalCost = 0;
-    let totalValue = 0;
-    const list = document.getElementById("options-list");
-    if (!list) return;
+  const list = $("options-list");
+  if (!list) return;
 
-    if (savedOptions.length === 0) {
-        list.innerHTML = "No options added yet.";
-        return;
-    }
+  list.innerHTML = "";
 
-    list.innerHTML = "";
-
-    savedOptions.forEach((option, index) => {
-        const cost = Number(option.cost);
-        const current = Number(option.current);
-
-        const totalCostPosition = cost * 100;
-        const currentValue = current * 100;
-        const profitLoss = currentValue - totalCost;
-        
-        totalCost += totalCostPosition;
-        totalValue += currentValue;
-       
-        const returnPercent = cost > 0 ? ((current - cost) / cost) * 100 : 0;
-
-        const plClass = profitLoss >= 0 ? "profit" : "loss";
-        const sign = profitLoss >= 0 ? "+" : "-";
-        const totalPL = totalValue - totalCost;
-        const totalReturn =
-            totalCost > 0
-                ? ((totalValue - totalCost) / totalCost) * 100
-                : 0;
-
-        setText("options-contracts", savedOptions.length);
-        setText("options-total-cost", money(totalCost));
-        setText("options-current-value", money(totalValue));
-        setText("options-total-pl", profitMoney(totalPL));   
-        setText("options-return", totalReturn.toFixed(1) + "%");
-
-        const calls = savedOptions.filter(
-    option => option.type === "Call"
-).length;
-
-const puts = savedOptions.filter(
-    option => option.type === "Put"
-).length;
-
-let riskLevel = "Low";
-
-if (savedOptions.length >= 3) {
-    riskLevel = "Moderate";
-}
-
-if (savedOptions.length >= 6) {
-    riskLevel = "High";
-}
-
-setText("risk-contracts", savedOptions.length);
-setText("risk-calls", calls);
-setText("risk-puts", puts);
-setText("risk-exposure", money(totalCost));
-setText("risk-level", riskLevel);
-        list.innerHTML += `
-            <div class="option-card">
-                <div class="position-row">
-                    <span>${option.symbol} ${option.strike} ${option.type} ${option.expiration}</span>
-                    <span class="${plClass}">${sign}$${Math.abs(profitLoss).toFixed(2)}</span>
-                </div>
-
-                <div class="position-row">
-                    <span>Cost Basis</span>
-                    <span>$${totalCost.toFixed(2)}</span>
-                </div>
-
-                <div class="position-row">
-                    <span>Current Value</span>
-                    <span>$${currentValue.toFixed(2)}</span>
-                </div>
-
-                <div class="position-row">
-                    <span>Return</span>
-                    <span class="${plClass}">${sign}${Math.abs(returnPercent).toFixed(1)}%</span>
-                </div>
-
-                <button type="button" onclick="deleteOption(${index})">Delete</button>
-            </div>
-        `;
-    });
+  options.forEach((option, index) => {
+    const row = document.createElement("div");
+    row.className = "position-row";
+    row.innerHTML = `
+      <span>${option.symbol} ${option.strike}${option.type} ${option.expiration}</span>
+      <strong>${money2(option.current)}</strong>
+      <button type="button" onclick="deleteOption(${index})">Delete</button>
+    `;
+    list.appendChild(row);
+  });
 }
 
 function addOption() {
-    const symbol = document.getElementById("option-symbol").value;
-    const strike = document.getElementById("option-strike").value;
-    const type = document.getElementById("option-type").value;
-    const expiration = document.getElementById("option-expiration").value;
-    const cost = Number(document.getElementById("option-cost").value);
-    const current = Number(document.getElementById("option-current").value);
+  const symbol = $("option-symbol")?.value || "";
+  const strike = $("option-strike")?.value || "";
+  const type = $("option-type")?.value || "Call";
+  const expiration = $("option-expiration")?.value || "";
+  const cost = Number($("option-cost")?.value || 0);
+  const current = Number($("option-current")?.value || 0);
 
-    savedOptions.push({
-        symbol,
-        strike,
-        type,
-        expiration,
-        cost,
-        current
-    });
+  if (!symbol || !strike) return;
 
-    saveOptions();
-    renderOptions();
+  options.push({ symbol, strike, type, expiration, cost, current });
+  renderOptions();
 }
 
 function deleteOption(index) {
-    savedOptions.splice(index, 1);
-    saveOptions();
-    renderOptions();
+  options.splice(index, 1);
+  renderOptions();
 }
 
-updatePortfolio();
-updateRobinhoodStatus();
-updateMarketStatus();
-loadSavedTradeStatus();
-rotateAISignals();
-loadPortfolioInputs();
-renderOptions();
-renderTradeJournal();
+window.addOption = addOption;
+window.deleteOption = deleteOption;
 
-setInterval(rotateAISignals, 8000);
 
-<div class="card">
-  <h2>📜 Recent Trades</h2>
+// ===== Trade Journal Safety =====
+function approveTrade(button) {
+  const card = button.closest(".trade-card");
+  if (!card) return;
 
-  <div class="trade-feed">
-    <div class="trade-row">
-      <span>BUY 1 TSLA 350C</span>
-      <strong>$0.90</strong>
-    </div>
-
-    <div class="trade-row">
-      <span>SELL 1 NVDA 150C</span>
-      <strong>$1.45</strong>
-    </div>
-
-    <div class="trade-row">
-      <span>BUY 2 SPY 620C</span>
-      <strong>$0.55</strong>
-    </div>
-  </div>
-</div>
-
-const inputPortfolio = document.getElementById("input-portfolio");
-const inputDailyPL = document.getElementById("input-daily-pl");
-const inputBuyingPower = document.getElementById("input-buying-power");
-
-const summaryPortfolio = document.getElementById("summary-portfolio");
-const summaryDailyPL = document.getElementById("summary-daily-pl");
-const summaryBuyingPower = document.getElementById("summary-buying-power");
-
-function forceUpdateTopCards() {
-  if (inputPortfolio && summaryPortfolio) {
-    summaryPortfolio.textContent = "$" + inputPortfolio.value;
-  }
-
-  if (inputDailyPL && summaryDailyPL) {
-    summaryDailyPL.textContent = "+$" + inputDailyPL.value;
-  }
-
-  if (inputBuyingPower && summaryBuyingPower) {
-    summaryBuyingPower.textContent = "$" + inputBuyingPower.value;
+  const status = card.querySelector(".trade-status");
+  if (status) {
+    status.textContent = "Approved";
+    status.className = "trade-status approved";
   }
 }
 
-forceUpdateTopCards();
+function rejectTrade(button) {
+  const card = button.closest(".trade-card");
+  if (!card) return;
 
-if (inputPortfolio) inputPortfolio.addEventListener("input", forceUpdateTopCards);
-if (inputDailyPL) inputDailyPL.addEventListener("input", forceUpdateTopCards);
-if (inputBuyingPower) inputBuyingPower.addEventListener("input", forceUpdateTopCards);
+  const status = card.querySelector(".trade-status");
+  if (status) {
+    status.textContent = "Rejected";
+    status.className = "trade-status rejected";
+  }
+}
+
+function deleteTrade(button) {
+  const card = button.closest(".trade-card");
+  if (card) card.remove();
+}
+
+window.approveTrade = approveTrade;
+window.rejectTrade = rejectTrade;
+window.deleteTrade = deleteTrade;
