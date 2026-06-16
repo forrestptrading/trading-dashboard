@@ -180,8 +180,8 @@ function approveTrade() {
         status.textContent = "Approved";
         status.className = "approved";
     }
-    
-    localStorage.setItem("tradeStatue", "Approved);
+
+    localStorage.setItem("tradeStatus", "Approved");
 }
 
 function rejectTrade() {
@@ -192,7 +192,7 @@ function rejectTrade() {
         status.className = "rejected";
     }
 
-    localStorage.setItem("tradeStatus. "Rejected);
+    localStorage.setItem("tradeStatus", "Rejected");
 }
 
 function loadSavedTradeStatus() {
