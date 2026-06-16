@@ -246,6 +246,17 @@ function rejectTrade() {
     }
 
     localStorage.setItem("tradeStatus_" + currentTradeSymbol, "Rejected");
+
+    tradeJournal = tradeJournal.filter(
+        trade => trade.symbol !== currentTradeSymbol
+    );
+
+    localStorage.setItem(
+        "tradeJournal",
+        JSON.stringify(tradeJournal)
+    );
+
+    renderTradeJournal();
 }
 
 function renderTradeJournal() {
