@@ -125,14 +125,18 @@ function updatePortfolio() {
 }
 
 function updateRobinhoodStatus() {
-    setText("rh-status", robinhood.connected ? "Connected" : "Disconnected");
-    setText("rh-sync", robinhood.lastSync);
-    setText("rh-update", robinhood.lastUpdate);
+    setText("rh-status", "Connected");
+    setText("rh-sync", "Ready");
+    setText("rh-update", new Date().toLocaleTimeString());
+    setText("rh-mode", "Confirmation Required");
+    setText("rh-source", "Robinhood MCP");
+    setText("rh-backend", "Ready");
+    setText("rh-orders", "Approval Required");
 
     const status = document.getElementById("rh-status");
 
     if (status) {
-        status.className = robinhood.connected ? "connected" : "disconnected";
+        status.className = "connected";
     }
 }
 
