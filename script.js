@@ -234,6 +234,7 @@ function approveTrade() {
         "tradeJournal",
         JSON.stringify(tradeJournal)
     );
+    renderTradeJournal();
 }
 
 function rejectTrade() {
