@@ -234,3 +234,18 @@ h1 {
 #live-chart svg {
   max-height: 160px;
 }
+
+#live-chart {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 60px !important;
+}
+
+#live-chart p {
+  margin: 0;
+}
+
+.card:has(#live-chart) {
+  min-height: 0 !important;
+  height: auto !important;
+}
