@@ -140,6 +140,17 @@ function rotateAISignals() {
     const current = aiSignals[signalIndex];
 
     document.getElementById("ai-analysis").innerHTML = current.signal;
+
+    document.getElementById("option-idea").innerHTML = `
+        <div class="position-row">
+            <span>${current.name} Call Idea</span>
+            <span class="profit">${current.name === "AGQ" ? "82%" : current.name === "SPCX" ? "68%" : current.name === "TSLA" ? "76%" : current.name === "NVDA" ? "86%" : "71%"}</span>
+        </div>
+        <p style="margin-top: 15px; opacity: 0.8;">
+            Demo setup rotating with the live chart. Real contract data will come later.
+        </p>
+    `;
+
     loadChart(current.symbol, current.name);
 
     signalIndex = (signalIndex + 1) % aiSignals.length;
