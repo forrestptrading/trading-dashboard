@@ -187,3 +187,38 @@ h1 {
     min-height: 55px;
     font-size: 16px;
 }
+/* iPad / mobile layout fix */
+@media (max-width: 900px) {
+    .summary-bar {
+        flex-direction: column;
+    }
+
+    .summary-bar div {
+        width: 100%;
+    }
+
+    .card {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .position-row,
+    .watchlist-row {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .pending-trade-card {
+        min-height: auto;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .approve-btn,
+    .reject-btn {
+        width: 100%;
+    }
+}
