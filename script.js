@@ -204,10 +204,45 @@ function loadSavedTradeStatus() {
     status.textContent = savedStatus;
     status.className = savedStatus === "Approved" ? "approved" : "rejected";
 }
+function loadPortfolioInputs() {
+    const portfolioInput = document.getElementById("input-portfolio");
+    const dailyInput = document.getElementById("input-daily-pl");
+    const buyingPowerInput = document.getElementById("input-buying-power");
+
+    const portfolioDisplay = document.getElementById("summary-portfolio");
+    const dailyDisplay = document.getElementById("summary-daily-pl");
+    const buyingPowerDisplay = document.getElementById("summary-buying-power");
+
+    const savedPortfolio = localStorage.getItem("portfolioValue");
+    const savedDaily = localStorage.getItem("dailyPL");
+    const savedBuyingPower = localStorage.getItem("buyingPower");
+
+    if (savedPortfolio) portfolioInput.value = savedPortfolio;
+    if (savedDaily) dailyInput.value = savedDaily;
+    if (savedBuyingPower) buyingPowerInput.value = savedBuyingPower;
+
+    function updateValues() {
+        portfolioDisplay.textContent = "$" + Number(portfolioInput.value).toLocaleString();
+        dailyDisplay.textContent = "$" + Number(dailyInput.value).toLocaleString();
+        buyingPowerDisplay.textContent = "$" + Number(buyingPowerInput.value).toLocaleString();
+
+        localStorage.setItem("portfolioValue", portfolioInput.value);
+        localStorage.setItem("dailyPL", dailyInput.value);
+        localStorage.setItem("buyingPower", buyingPowerInput.value);
+    }
+
+    portfolioInput.addEventListener("input", updateValues);
+    dailyInput.addEventListener("input", updateValues);
+    buyingPowerInput.addEventListener("input", updateValues);
+
+    updateValues();
+}
 
 updatePortfolio();
 updateRobinhoodStatus();
 updateMarketStatus();
 loadSavedTradeStatus();
 rotateAISignals();
+loadPortfolioInputs();
+
 setInterval(rotateAISignals, 8000);
