@@ -349,9 +349,11 @@ function renderOptions() {
 
         const totalCostPosition = cost * 100;
         const currentValue = current * 100;
+        const profitLoss = currentValue - totalCost;
+        
         totalCost += totalCostPosition;
         totalValue += currentValue;
-        const profitLoss = currentValue - totalCost;
+       
         const returnPercent = cost > 0 ? ((current - cost) / cost) * 100 : 0;
 
         const plClass = profitLoss >= 0 ? "profit" : "loss";
