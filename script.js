@@ -535,3 +535,24 @@ renderOptions();
 renderTradeJournal();
 
 setInterval(rotateAISignals, 8000);
+
+<div class="card">
+  <h2>📜 Recent Trades</h2>
+
+  <div class="trade-feed">
+    <div class="trade-row">
+      <span>BUY 1 TSLA 350C</span>
+      <strong>$0.90</strong>
+    </div>
+
+    <div class="trade-row">
+      <span>SELL 1 NVDA 150C</span>
+      <strong>$1.45</strong>
+    </div>
+
+    <div class="trade-row">
+      <span>BUY 2 SPY 620C</span>
+      <strong>$0.55</strong>
+    </div>
+  </div>
+</div>
