@@ -180,6 +180,8 @@ function approveTrade() {
         status.textContent = "Approved";
         status.className = "approved";
     }
+    
+    localStorage.setItem("tradeStatue", "Approved);
 }
 
 function rejectTrade() {
@@ -189,11 +191,23 @@ function rejectTrade() {
         status.textContent = "Rejected";
         status.className = "rejected";
     }
+
+    localStorage.setItem("tradeStatus. "Rejected);
+}
+
+function loadSavedTradeStatus() {
+    const savedStatus = localStorage.getItem("tradeStatus");
+    const status = document.getElementById("trade-status");
+
+    if (!status || !savedStatus) return;
+
+    status.textContent = savedStatus;
+    status.className = savedStatus === "Approved" ? "approved" : "rejected";
 }
 
 updatePortfolio();
 updateRobinhoodStatus();
 updateMarketStatus();
+loadSavedTradeStatus();
 rotateAISignals();
-
 setInterval(rotateAISignals, 8000);
