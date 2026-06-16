@@ -9,22 +9,24 @@
     <h1>📈 Forrest's Trading Terminal</h1>
 
     <div class="summary-bar">
-        <div>
-            <span>Portfolio</span>
-            <strong id="summary-portfolio">$0.00</strong>
-        </div>
-
-        <div>
-            <span>Daily P/L</span>
-            <strong id="summary-daily-pl" class="profit">+$0.00</strong>
-        </div>
-
-        <div>
-            <span>Buying Power</span>
-            <strong id="summary-buying-power">$0.00</strong>
-        </div>
+    <div>
+        <span>Portfolio</span>
+        <input id="input-portfolio" type="number" value="10000">
+        <strong id="summary-portfolio">$0.00</strong>
     </div>
 
+    <div>
+        <span>Daily P/L</span>
+        <input id="input-daily-pl" type="number" value="250">
+        <strong id="summary-daily-pl" class="profit">+$0.00</strong>
+    </div>
+
+    <div>
+        <span>Buying Power</span>
+        <input id="input-buying-power" type="number" value="3500">
+        <strong id="summary-buying-power">$0.00</strong>
+    </div>
+</div>
     <div class="card">
         <h2>🤖 AI Analysis</h2>
         <p id="ai-analysis">Waiting for AI signal...</p>
