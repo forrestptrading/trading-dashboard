@@ -12,6 +12,41 @@ const robinhood = {
     lastUpdate: "Never"
 };
 
+const aiSignals = [
+    {
+        symbol: "AGQ",
+        name: "AGQ",
+        signal: "Market Bias: Silver Bullish<br>Top Watch: AGQ<br>Confidence: 82%<br>Risk Level: High",
+        optionConfidence: "82%"
+    },
+    {
+        symbol: "SPCX",
+        name: "SPCX",
+        signal: "Market Bias: Space Sector Watch<br>Top Watch: SPCX<br>Confidence: 68%<br>Risk Level: High",
+        optionConfidence: "68%"
+    },
+    {
+        symbol: "TSLA",
+        name: "TSLA",
+        signal: "Market Bias: Momentum Building<br>Top Watch: TSLA<br>Confidence: 76%<br>Risk Level: Moderate",
+        optionConfidence: "76%"
+    },
+    {
+        symbol: "NVDA",
+        name: "NVDA",
+        signal: "Market Bias: AI Leadership<br>Top Watch: NVDA<br>Confidence: 86%<br>Risk Level: Moderate",
+        optionConfidence: "86%"
+    },
+    {
+        symbol: "IWM",
+        name: "IWM",
+        signal: "Market Bias: Small Caps Improving<br>Top Watch: IWM<br>Confidence: 71%<br>Risk Level: Moderate",
+        optionConfidence: "71%"
+    }
+];
+
+let signalIndex = 0;
+
 function money(value) {
     return "$" + value.toLocaleString(undefined, {
         minimumFractionDigits: 2,
@@ -30,14 +65,27 @@ function setText(id, value) {
     }
 }
 
-setText("portfolio-value", money(portfolio.value));
-setText("daily-pl", profitMoney(portfolio.dailyPL));
-setText("buying-power", money(portfolio.buyingPower));
-setText("options-contracts", portfolio.optionsContracts);
+function updatePortfolio() {
+    setText("portfolio-value", money(portfolio.value));
+    setText("daily-pl", profitMoney(portfolio.dailyPL));
+    setText("buying-power", money(portfolio.buyingPower));
+    setText("options-contracts", portfolio.optionsContracts);
 
-setText("summary-portfolio", money(portfolio.value));
-setText("summary-daily-pl", profitMoney(portfolio.dailyPL));
-setText("summary-buying-power", money(portfolio.buyingPower));
+    setText("summary-portfolio", money(portfolio.value));
+    setText("summary-daily-pl", profitMoney(portfolio.dailyPL));
+    setText("summary-buying-power", money(portfolio.buyingPower));
+}
+
+function updateRobinhoodStatus() {
+    setText("rh-status", robinhood.connected ? "Connected" : "Disconnected");
+    setText("rh-sync", robinhood.lastSync);
+    setText("rh-update", robinhood.lastUpdate);
+
+    const status = document.getElementById("rh-status");
+    if (status) {
+        status.className = robinhood.connected ? "connected" : "disconnected";
+    }
+}
 
 function updateMarketStatus() {
     const now = new Date();
@@ -79,43 +127,6 @@ function updateMarketStatus() {
     }
 }
 
-updateMarketStatus();
-document.getElementById("ai-analysis").innerHTML = `
-Market Bias: Bullish<br>
-Top Watch: NVDA<br>
-Confidence: 78%<br>
-Risk Level: Moderate
-`;
-
-const aiSignals = [
-    {
-        symbol: "AGQ",
-        name: "AGQ",
-        signal: "Market Bias: Silver Bullish<br>Top Watch: AGQ<br>Confidence: 82%<br>Risk Level: High"
-    },
-    {
-        symbol: "SPCX",
-        name: "SPCX",
-        signal: "Market Bias: Space Sector Watch<br>Top Watch: SPCX<br>Confidence: 68%<br>Risk Level: High"
-    },
-    {
-        symbol: "TSLA",
-        name: "TSLA",
-        signal: "Market Bias: Momentum Building<br>Top Watch: TSLA<br>Confidence: 74%<br>Risk Level: Moderate"
-    },
-    {
-        symbol: "NVDA",
-        name: "NVDA",
-        signal: "Market Bias: AI Leadership<br>Top Watch: NVDA<br>Confidence: 86%<br>Risk Level: Moderate"
-    },
-    {
-        symbol: "IWM",
-        name: "IWM",
-        signal: "Market Bias: Small Caps Improving<br>Top Watch: IWM<br>Confidence: 71%<br>Risk Level: Moderate"
-    }
-];
-
-let signalIndex = 0;
 function loadChart(symbol, name) {
     const chartBox = document.getElementById("live-chart");
     const chartTitle = document.getElementById("chart-title");
@@ -128,6 +139,7 @@ function loadChart(symbol, name) {
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js";
     script.async = true;
+
     script.innerHTML = JSON.stringify({
         symbol: symbol,
         width: "100%",
@@ -145,47 +157,33 @@ function loadChart(symbol, name) {
 function rotateAISignals() {
     const current = aiSignals[signalIndex];
 
-    document.getElementById("ai-analysis").innerHTML = current.signal;
+    const aiAnalysis = document.getElementById("ai-analysis");
+    const optionIdea = document.getElementById("option-idea");
 
-    document.getElementById("option-idea").innerHTML = `
-        <div class="position-row">
-            <span>${current.name} Call Idea</span>
-            <span class="profit">${current.name === "AGQ" ? "82%" : current.name === "SPCX" ? "68%" : current.name === "TSLA" ? "76%" : current.name === "NVDA" ? "86%" : "71%"}</span>
-        </div>
-        <p style="margin-top: 15px; opacity: 0.8;">
-            Demo setup rotating with the live chart. Real contract data will come later.
-        </p>
-    `;
+    if (aiAnalysis) {
+        aiAnalysis.innerHTML = current.signal;
+    }
+
+    if (optionIdea) {
+        optionIdea.innerHTML = `
+            <div class="position-row">
+                <span>${current.name} Call Idea</span>
+                <span class="profit">${current.optionConfidence}</span>
+            </div>
+            <p style="margin-top: 15px; opacity: 0.8;">
+                Demo setup rotating with the live chart. Real contract data will come later.
+            </p>
+        `;
+    }
 
     loadChart(current.symbol, current.name);
 
     signalIndex = (signalIndex + 1) % aiSignals.length;
 }
 
-function updateRobinhoodStatus() {
-    const statusElement = document.getElementById("robinhood-status");
-
-    if (!statusElement) return;
-
-    statusElement.innerHTML = `
-        <div class="position-row">
-            <span>Connection</span>
-            <span class="loss">Disconnected</span>
-        </div>
-
-        <div class="position-row">
-            <span>Last Sync</span>
-            <span>${robinhood.lastSync}</span>
-        </div>
-
-        <div class="position-row">
-            <span>Last Update</span>
-            <span>${robinhood.lastUpdate}</span>
-        </div>
-    `;
-}
-
+updatePortfolio();
 updateRobinhoodStatus();
+updateMarketStatus();
 
 rotateAISignals();
 setInterval(rotateAISignals, 8000);
