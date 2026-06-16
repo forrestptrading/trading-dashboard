@@ -18,31 +18,46 @@ const aiSignals = [
         name: "AGQ",
         signal: "Market Bias: Silver Bullish<br>Top Watch: AGQ<br>Confidence: 82%<br>Risk Level: High",
         optionConfidence: "82%"
+        tradeIdea: "AGQ Call",
+        tradeConfidence: "82%",
+        tradeRisk: "High"
     },
     {
         symbol: "SPCX",
         name: "SPCX",
         signal: "Market Bias: Space Sector Watch<br>Top Watch: SPCX<br>Confidence: 68%<br>Risk Level: High",
         optionConfidence: "68%"
+        tradeIdea: "SPCX Call",
+        tradeConfidence: "68%",
+        tradeRisk: "Moderate"
     },
     {
         symbol: "TSLA",
         name: "TSLA",
         signal: "Market Bias: Momentum Building<br>Top Watch: TSLA<br>Confidence: 76%<br>Risk Level: Moderate",
         optionConfidence: "76%"
+        tradeIdea: "TSLA 350 Call",
+        tradeConfidence: "76%",
+        tradeRisk: "Moderate"
     },
     {
         symbol: "NVDA",
         name: "NVDA",
         signal: "Market Bias: AI Leadership<br>Top Watch: NVDA<br>Confidence: 86%<br>Risk Level: Moderate",
         optionConfidence: "86%"
+        tradeIdea: "NVDA 185 Call",
+        tradeConfidence: "86%",
+        tradeRisk: "Moderate"    
     },
     {
         symbol: "IWM",
         name: "IWM",
         signal: "Market Bias: Small Caps Improving<br>Top Watch: IWM<br>Confidence: 71%<br>Risk Level: Moderate",
         optionConfidence: "71%"
-    }
+        tradeIdea: "IWM 286 Call",
+        tradeConfidence: "79%",
+        tradeRisk: "Moderate"
+}
 ];
 
 let signalIndex = 0;
@@ -170,6 +185,21 @@ function rotateAISignals() {
 
     loadChart(current.symbol, current.name);
 
+    const tradeIdea = document.getElementById("pending-trade-idea");
+    const tradeConfidence = document.getElementById("pending-confidence");
+    const tradeRisk = document.getElementById("pending-risk");
+    
+    if (tradeIdea) {
+    tradeIdea.textContent = current.tradeIdea;
+}
+
+    if (tradeConfidence) {
+        tradeConfidence.textContent = current.tradeConfidence;
+}
+
+    if (tradeRisk) {
+    tradeRisk.textContent = current.tradeRisk;
+}
     signalIndex = (signalIndex + 1) % aiSignals.length;
 }
 
