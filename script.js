@@ -62,6 +62,38 @@ const aiSignals = [
 
 let signalIndex = 0;
 let currentTradeSymbol = "AGQ";
+let autoTradeMap = {
+    "AGQ": {
+        strike: 130,
+        type: "Call",
+        expiration: "6/20",
+        cost: 0.50
+    },
+    "SPCX": {
+        strike: 28,
+        type: "Call",
+        expiration: "6/20",
+        cost: 0.35
+    },
+    "TSLA": {
+        strike: 350,
+        type: "Call",
+        expiration: "6/20",
+        cost: 1.20
+    },
+    "NVDA": {
+        strike: 185,
+        type: "Call",
+        expiration: "6/20",
+        cost: 0.90
+    },
+    "IWM": {
+        strike: 286,
+        type: "Call",
+        expiration: "6/20",
+        cost: 0.09
+    }
+};
 
 let tradeJournal = JSON.parse(
     localStorage.getItem("tradeJournal")
@@ -234,6 +266,25 @@ function approveTrade() {
         "tradeJournal",
         JSON.stringify(tradeJournal)
     );
+    const autoTrade = autoTradeMap[currentTradeSymbol];
+
+if (autoTrade) {
+    savedOptions.push({
+        symbol: currentTradeSymbol,
+        strike: autoTrade.strike,
+        type: autoTrade.type,
+        expiration: autoTrade.expiration,
+        cost: autoTrade.cost,
+        current: autoTrade.cost
+    });
+
+    localStorage.setItem(
+        "optionsTracker",
+        JSON.stringify(savedOptions)
+    );
+
+    renderOptions();
+}
     renderTradeJournal();
 }
 
