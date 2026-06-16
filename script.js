@@ -563,3 +563,31 @@ setInterval(rotateAISignals, 8000);
     </div>
   </div>
 </div>
+
+const inputPortfolio = document.getElementById("input-portfolio");
+const inputDailyPL = document.getElementById("input-daily-pl");
+const inputBuyingPower = document.getElementById("input-buying-power");
+
+const summaryPortfolio = document.getElementById("summary-portfolio");
+const summaryDailyPL = document.getElementById("summary-daily-pl");
+const summaryBuyingPower = document.getElementById("summary-buying-power");
+
+function forceUpdateTopCards() {
+  if (inputPortfolio && summaryPortfolio) {
+    summaryPortfolio.textContent = "$" + inputPortfolio.value;
+  }
+
+  if (inputDailyPL && summaryDailyPL) {
+    summaryDailyPL.textContent = "+$" + inputDailyPL.value;
+  }
+
+  if (inputBuyingPower && summaryBuyingPower) {
+    summaryBuyingPower.textContent = "$" + inputBuyingPower.value;
+  }
+}
+
+forceUpdateTopCards();
+
+if (inputPortfolio) inputPortfolio.addEventListener("input", forceUpdateTopCards);
+if (inputDailyPL) inputDailyPL.addEventListener("input", forceUpdateTopCards);
+if (inputBuyingPower) inputBuyingPower.addEventListener("input", forceUpdateTopCards);
