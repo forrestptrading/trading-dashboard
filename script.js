@@ -61,6 +61,7 @@ const aiSignals = [
 ];
 
 let signalIndex = 0;
+let currentTradeSymbol = "AGQ";
 
 function money(value) {
     return "$" + value.toLocaleString(undefined, {
@@ -163,7 +164,8 @@ function loadChart(symbol, name) {
 
 function rotateAISignals() {
     const current = aiSignals[signalIndex];
-
+    currentTradeSymbol = current.name;
+    
     const aiAnalysis = document.getElementById("ai-analysis");
     const optionIdea = document.getElementById("option-idea");
 
@@ -200,6 +202,8 @@ function rotateAISignals() {
     if (tradeRisk) {
     tradeRisk.textContent = current.tradeRisk;
 }
+    loadSavedTradeStatus();
+    
     signalIndex = (signalIndex + 1) % aiSignals.length;
 }
 
@@ -211,7 +215,7 @@ function approveTrade() {
         status.className = "approved";
     }
 
-    localStorage.setItem("tradeStatus", "Approved");
+    localStorage.setItem("tradeStatus_" + currentTradeSymbol, "Approved");
 }
 
 function rejectTrade() {
@@ -222,11 +226,13 @@ function rejectTrade() {
         status.className = "rejected";
     }
 
-    localStorage.setItem("tradeStatus", "Rejected");
+    localStorage.setItem("tradeStatus_" + currentTradeSymbol, "Rejected");
 }
 
 function loadSavedTradeStatus() {
-    const savedStatus = localStorage.getItem("tradeStatus");
+    const savedStatus = localStorage.getItem(
+    "tradeStatus_" + currentTradeSymbol
+);
     const status = document.getElementById("trade-status");
 
     if (!status || !savedStatus) return;
