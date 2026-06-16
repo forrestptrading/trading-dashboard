@@ -268,8 +268,22 @@ function approveTrade() {
     );
     const autoTrade = autoTradeMap[currentTradeSymbol];
 
-if (autoTrade) {
-    savedOptions.push({
+    if (autoTrade) {
+        const alreadyExists = savedOptions.some(
+        option =>
+            option.symbol === currentTradeSymbol &&
+            option.strike === autoTrade.strike &&
+            option.type === autoTrade.type &&
+            option.expiration === autoTrade.expiration
+        );
+    
+        if (alreadyExists) {
+            renderOptions();    
+            renderTradeJournal();
+            return;
+        }
+        savedOptions.push({
+     
         symbol: currentTradeSymbol,
         strike: autoTrade.strike,
         type: autoTrade.type,
