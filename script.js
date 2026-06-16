@@ -535,3 +535,45 @@ renderOptions();
 renderTradeJournal();
 
 setInterval(rotateAISignals, 8000);
+
+const portfolioCanvas = document.getElementById("portfolioChart");
+
+if (portfolioCanvas) {
+  const ctx = portfolioCanvas.getContext("2d");
+
+  const portfolioHistory = [10000, 10150, 9950, 10300, 10650, 10400, 10850];
+
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      datasets: [{
+        label: "Portfolio Value",
+        data: portfolioHistory,
+        borderWidth: 3,
+        tension: 0.35,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: {
+            color: "#f5ead6"
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#f5ead6" },
+          grid: { color: "rgba(245,234,214,0.1)" }
+        },
+        y: {
+          ticks: { color: "#f5ead6" },
+          grid: { color: "rgba(245,234,214,0.1)" }
+        }
+      }
+    }
+  });
+}
