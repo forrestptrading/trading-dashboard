@@ -75,6 +75,25 @@
     </div>
 
     <div class="card">
+    <h2>📄 Options Tracker</h2>
+
+    <div class="position-inputs">
+        <input id="option-symbol" placeholder="Ticker">
+        <input id="option-strike" type="number" placeholder="Strike">
+        <select id="option-type">
+            <option>Call</option>
+            <option>Put</option>
+        </select>
+        <input id="option-expiration" placeholder="Expiration">
+        <input id="option-cost" type="number" placeholder="Cost">
+        <input id="option-current" type="number" placeholder="Current">
+        <button onclick="addOption()">Add Option</button>
+    </div>
+
+    <div id="options-list"></div>
+</div>
+    
+    <div class="card">
         <h2>🔗 Robinhood Integration</h2>
 
         <div class="position-row">
