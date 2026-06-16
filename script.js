@@ -162,5 +162,30 @@ function rotateAISignals() {
     signalIndex = (signalIndex + 1) % aiSignals.length;
 }
 
+function updateRobinhoodStatus() {
+    const statusElement = document.getElementById("robinhood-status");
+
+    if (!statusElement) return;
+
+    statusElement.innerHTML = `
+        <div class="position-row">
+            <span>Connection</span>
+            <span class="loss">Disconnected</span>
+        </div>
+
+        <div class="position-row">
+            <span>Last Sync</span>
+            <span>${robinhood.lastSync}</span>
+        </div>
+
+        <div class="position-row">
+            <span>Last Update</span>
+            <span>${robinhood.lastUpdate}</span>
+        </div>
+    `;
+}
+
+updateRobinhoodStatus();
+
 rotateAISignals();
 setInterval(rotateAISignals, 8000);
