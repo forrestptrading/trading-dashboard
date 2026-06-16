@@ -119,3 +119,10 @@ h1 {
 #market-status.closed {
     color: #ff3b30;
 }
+.chart-placeholder svg {
+    overflow: visible;
+}
+
+.chart-placeholder polyline {
+    filter: drop-shadow(0 0 8px #00ff88);
+}
