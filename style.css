@@ -222,3 +222,15 @@ h1 {
     color: white;
     font-weight: bold;
 }
+
+#live-chart {
+  min-height: 120px;
+  max-height: 180px;
+  overflow: hidden;
+}
+
+#live-chart iframe,
+#live-chart canvas,
+#live-chart svg {
+  max-height: 160px;
+}
