@@ -1,249 +1,260 @@
-// ===== Helpers =====
-function $(id) {
-  return document.getElementById(id);
+document.addEventListener("DOMContentLoaded", () => {
+  loadMetrics();
+  loadTradeStatus();
+  loadJournal();
+  loadOptions();
+
+  setupMetricInputs();
+});
+
+function formatMoney(value) {
+  const number = Number(value) || 0;
+  return "$" + number.toLocaleString();
 }
 
-function money(value) {
-  return "$" + Number(value || 0).toLocaleString();
-}
+function setupMetricInputs() {
+  const portfolioInput = document.getElementById("portfolio-input");
+  const dailyInput = document.getElementById("daily-input");
+  const buyingInput = document.getElementById("buying-input");
 
-function money2(value) {
-  return "$" + Number(value || 0).toFixed(2);
-}
-
-
-// ===== Top Summary Cards =====
-const inputPortfolio = $("input-portfolio");
-const inputDailyPL = $("input-daily-pl");
-const inputBuyingPower = $("input-buying-power");
-
-function updateTopCards() {
-  if ($("summary-portfolio") && inputPortfolio) {
-    $("summary-portfolio").textContent = money(inputPortfolio.value);
+  if (portfolioInput) {
+    portfolioInput.addEventListener("input", () => {
+      localStorage.setItem("portfolioValue", portfolioInput.value);
+      document.getElementById("portfolio-value").textContent = formatMoney(portfolioInput.value);
+    });
   }
 
-  if ($("summary-daily-pl") && inputDailyPL) {
-    $("summary-daily-pl").textContent = "+$" + Number(inputDailyPL.value || 0).toLocaleString();
+  if (dailyInput) {
+    dailyInput.addEventListener("input", () => {
+      localStorage.setItem("dailyPL", dailyInput.value);
+      const dailyPL = document.getElementById("daily-pl");
+      const value = Number(dailyInput.value) || 0;
+      dailyPL.textContent = value >= 0 ? "+$" + value.toLocaleString() : "-$" + Math.abs(value).toLocaleString();
+      dailyPL.className = value >= 0 ? "profit" : "loss";
+    });
   }
 
-  if ($("summary-buying-power") && inputBuyingPower) {
-    $("summary-buying-power").textContent = money(inputBuyingPower.value);
-  }
-}
-
-if (inputPortfolio) inputPortfolio.addEventListener("input", updateTopCards);
-if (inputDailyPL) inputDailyPL.addEventListener("input", updateTopCards);
-if (inputBuyingPower) inputBuyingPower.addEventListener("input", updateTopCards);
-
-updateTopCards();
-
-
-// ===== AI Analysis =====
-if ($("ai-analysis")) {
-  $("ai-analysis").innerHTML = `
-    Market Bias: Space Sector Watch<br>
-    Top Watch: SPCX<br>
-    Confidence: 68%<br>
-    Risk Level: High
-  `;
-}
-
-
-// ===== AI Options Idea =====
-const ideas = [
-  ["TSLA Call Idea", "76%"],
-  ["NVDA Call Idea", "86%"],
-  ["SPY Momentum Idea", "72%"]
-];
-
-let ideaIndex = 0;
-
-function updateIdea() {
-  if (!$("option-idea")) return;
-
-  const idea = ideas[ideaIndex];
-
-  $("option-idea").innerHTML = `
-    <div class="position-row">
-      <span><strong>${idea[0]}</strong></span>
-      <strong class="profit">${idea[1]}</strong>
-    </div>
-    <p>Demo setup rotating with the live chart. Real contract data will come later.</p>
-  `;
-
-  ideaIndex = (ideaIndex + 1) % ideas.length;
-}
-
-updateIdea();
-setInterval(updateIdea, 5000);
-
-
-// ===== Options Portfolio =====
-function updateOptionsPortfolio() {
-  const contracts = 1;
-  const totalCost = 9;
-  const currentValue = 25;
-  const profit = currentValue - totalCost;
-  const returnPercent = ((profit / totalCost) * 100).toFixed(1);
-
-  if ($("options-contracts")) $("options-contracts").textContent = contracts;
-  if ($("options-total-cost")) $("options-total-cost").textContent = money2(totalCost);
-  if ($("options-current-value")) $("options-current-value").textContent = money2(currentValue);
-  if ($("options-pl")) $("options-pl").textContent = "+$" + profit.toFixed(2);
-  if ($("options-return")) $("options-return").textContent = returnPercent + "%";
-
-  if ($("risk-contracts")) $("risk-contracts").textContent = contracts;
-  if ($("risk-calls")) $("risk-calls").textContent = "1";
-  if ($("risk-puts")) $("risk-puts").textContent = "0";
-  if ($("risk-exposure")) $("risk-exposure").textContent = money2(totalCost);
-  if ($("risk-level")) $("risk-level").textContent = "High";
-}
-
-updateOptionsPortfolio();
-
-
-// ===== Robinhood Integration =====
-if ($("rh-status")) {
-  $("rh-status").textContent = "Connected";
-  $("rh-status").className = "connected";
-}
-
-if ($("rh-sync")) $("rh-sync").textContent = "Waiting";
-if ($("rh-update")) $("rh-update").textContent = "Never";
-if ($("rh-mode")) $("rh-mode").textContent = "Confirmation Required";
-if ($("rh-source")) $("rh-source").textContent = "Demo Mode";
-if ($("rh-backend")) $("rh-backend").textContent = "Not Connected";
-if ($("rh-orders")) $("rh-orders").textContent = "Approval Only";
-
-if ($("rh-account-value")) $("rh-account-value").textContent = "$0.00";
-if ($("rh-buying-power")) $("rh-buying-power").textContent = "$0.00";
-if ($("rh-day-pl")) $("rh-day-pl").textContent = "$0.00";
-
-
-// ===== Options Tracker =====
-let options = [];
-
-function renderOptions() {
-  const list = $("options-list");
-  if (!list) return;
-
-  list.innerHTML = "";
-
-  options.forEach((option, index) => {
-    const row = document.createElement("div");
-    row.className = "position-row";
-    row.innerHTML = `
-      <span>${option.symbol} ${option.strike}${option.type} ${option.expiration}</span>
-      <strong>${money2(option.current)}</strong>
-      <button type="button" onclick="deleteOption(${index})">Delete</button>
-    `;
-    list.appendChild(row);
-  });
-}
-
-function addOption() {
-  const symbol = $("option-symbol")?.value || "";
-  const strike = $("option-strike")?.value || "";
-  const type = $("option-type")?.value || "Call";
-  const expiration = $("option-expiration")?.value || "";
-  const cost = Number($("option-cost")?.value || 0);
-  const current = Number($("option-current")?.value || 0);
-
-  if (!symbol || !strike) return;
-
-  options.push({ symbol, strike, type, expiration, cost, current });
-  renderOptions();
-}
-
-function deleteOption(index) {
-  options.splice(index, 1);
-  renderOptions();
-}
-
-window.addOption = addOption;
-window.deleteOption = deleteOption;
-
-function approveTrade() {
-  const status = document.getElementById("trade-status");
-  const tradeIdea = document.getElementById("pending-trade-idea")?.textContent || "Unknown Trade";
-
-  if (!status) return;
-
-  status.textContent = "Approved";
-  status.style.color = "#00ff88";
-
-  localStorage.setItem("pendingTradeStatus", "Approved");
-
-  addTradeToJournal("APPROVED", tradeIdea);
-}
-
-function rejectTrade() {
-  const status = document.getElementById("trade-status");
-  const tradeIdea = document.getElementById("pending-trade-idea")?.textContent || "Unknown Trade";
-
-  if (!status) return;
-
-  status.textContent = "Rejected";
-  status.style.color = "#ff4d4d";
-
-  localStorage.setItem("pendingTradeStatus", "Rejected");
-
-  addTradeToJournal("REJECTED", tradeIdea);
-}
-
-function addTradeToJournal(action, tradeIdea) {
-  const journal = document.getElementById("trade-journal-list");
-  if (!journal) return;
-
-  const emptyText = journal.querySelector("p");
-  if (emptyText) emptyText.remove();
-
-  const entry = document.createElement("div");
-  entry.className = "journal-entry";
-  entry.textContent = `${action}: ${tradeIdea}`;
-
-  journal.prepend(entry);
-
-  const savedTrades = JSON.parse(localStorage.getItem("tradeJournal")) || [];
-  savedTrades.unshift(`${action}: ${tradeIdea}`);
-  localStorage.setItem("tradeJournal", JSON.stringify(savedTrades));
-}
-
-  status.textContent = "Rejected";
-  status.style.color = "#ff4d4d";
-}
-
-function deleteTrade(button) {
-  const card = button.closest(".trade-card");
-  if (card) card.remove();
-}
-
-function loadSavedTradeData() {
-  const savedStatus = localStorage.getItem("pendingTradeStatus");
-  const status = document.getElementById("trade-status");
-
-  if (savedStatus && status) {
-    status.textContent = savedStatus;
-    status.style.color = savedStatus === "Approved" ? "#00ff88" : "#ff4d4d";
-  }
-
-  const journal = document.getElementById("trade-journal-list");
-  const savedTrades = JSON.parse(localStorage.getItem("tradeJournal")) || [];
-
-  if (journal && savedTrades.length > 0) {
-    journal.innerHTML = "";
-
-    savedTrades.forEach((trade) => {
-      const entry = document.createElement("div");
-      entry.className = "journal-entry";
-      entry.textContent = trade;
-      journal.appendChild(entry);
+  if (buyingInput) {
+    buyingInput.addEventListener("input", () => {
+      localStorage.setItem("buyingPower", buyingInput.value);
+      document.getElementById("buying-power").textContent = formatMoney(buyingInput.value);
     });
   }
 }
 
-loadSavedTradeData();
+function loadMetrics() {
+  const portfolio = localStorage.getItem("portfolioValue") || "10000";
+  const daily = localStorage.getItem("dailyPL") || "250";
+  const buying = localStorage.getItem("buyingPower") || "3500";
+
+  const portfolioInput = document.getElementById("portfolio-input");
+  const dailyInput = document.getElementById("daily-input");
+  const buyingInput = document.getElementById("buying-input");
+
+  if (portfolioInput) portfolioInput.value = portfolio;
+  if (dailyInput) dailyInput.value = daily;
+  if (buyingInput) buyingInput.value = buying;
+
+  if (document.getElementById("portfolio-value")) {
+    document.getElementById("portfolio-value").textContent = formatMoney(portfolio);
+  }
+
+  if (document.getElementById("buying-power")) {
+    document.getElementById("buying-power").textContent = formatMoney(buying);
+  }
+
+  const dailyPL = document.getElementById("daily-pl");
+  const dailyValue = Number(daily) || 0;
+
+  if (dailyPL) {
+    dailyPL.textContent =
+      dailyValue >= 0
+        ? "+$" + dailyValue.toLocaleString()
+        : "-$" + Math.abs(dailyValue).toLocaleString();
+
+    dailyPL.className = dailyValue >= 0 ? "profit" : "loss";
+  }
+}
+
+function approveTrade() {
+  updateTradeStatus("Approved");
+  addJournalEntry("APPROVED");
+}
+
+function rejectTrade() {
+  updateTradeStatus("Rejected");
+  addJournalEntry("REJECTED");
+}
+
+function updateTradeStatus(statusText) {
+  const status = document.getElementById("trade-status");
+  if (!status) return;
+
+  status.textContent = statusText;
+  status.className = statusText === "Approved" ? "profit" : "loss";
+
+  localStorage.setItem("pendingTradeStatus", statusText);
+}
+
+function loadTradeStatus() {
+  const savedStatus = localStorage.getItem("pendingTradeStatus");
+  const status = document.getElementById("trade-status");
+
+  if (!savedStatus || !status) return;
+
+  status.textContent = savedStatus;
+  status.className = savedStatus === "Approved" ? "profit" : "loss";
+}
+
+function addJournalEntry(action) {
+  const tradeIdea =
+    document.getElementById("pending-trade-idea")?.textContent || "Unknown Trade";
+
+  const entry = {
+    action: action,
+    trade: tradeIdea,
+    time: new Date().toLocaleString()
+  };
+
+  const journal = JSON.parse(localStorage.getItem("tradeJournal")) || [];
+  journal.unshift(entry);
+  localStorage.setItem("tradeJournal", JSON.stringify(journal));
+
+  renderJournal();
+}
+
+function loadJournal() {
+  renderJournal();
+}
+
+function renderJournal() {
+  const journalBox = document.getElementById("trade-journal-list");
+  if (!journalBox) return;
+
+  const journal = JSON.parse(localStorage.getItem("tradeJournal")) || [];
+
+  if (journal.length === 0) {
+    journalBox.innerHTML = "<p>No trades recorded yet.</p>";
+    return;
+  }
+
+  journalBox.innerHTML = "";
+
+  journal.forEach((item) => {
+    const div = document.createElement("div");
+    div.className = "journal-entry";
+    div.innerHTML = `
+      <strong>${item.action}</strong>: ${item.trade}<br>
+      <small>${item.time}</small>
+    `;
+    journalBox.appendChild(div);
+  });
+}
+
+function clearJournal() {
+  localStorage.removeItem("tradeJournal");
+  renderJournal();
+}
+
+function addOption() {
+  const ticker = document.getElementById("ticker")?.value.trim();
+  const strike = document.getElementById("strike")?.value.trim();
+  const type = document.getElementById("type")?.value;
+  const expiration = document.getElementById("expiration")?.value.trim();
+  const cost = document.getElementById("cost")?.value.trim();
+  const current = document.getElementById("current")?.value.trim();
+
+  if (!ticker || !strike || !expiration || !cost) {
+    alert("Fill in ticker, strike, expiration, and cost.");
+    return;
+  }
+
+  const option = {
+    ticker,
+    strike,
+    type,
+    expiration,
+    cost,
+    current: current || cost,
+    time: new Date().toLocaleString()
+  };
+
+  const options = JSON.parse(localStorage.getItem("optionsTracker")) || [];
+  options.unshift(option);
+  localStorage.setItem("optionsTracker", JSON.stringify(options));
+
+  clearOptionInputs();
+  renderOptions();
+}
+
+function clearOptionInputs() {
+  ["ticker", "strike", "expiration", "cost", "current"].forEach((id) => {
+    const input = document.getElementById(id);
+    if (input) input.value = "";
+  });
+}
+
+function loadOptions() {
+  renderOptions();
+}
+
+function renderOptions() {
+  const list = document.getElementById("options-list");
+  if (!list) return;
+
+  const options = JSON.parse(localStorage.getItem("optionsTracker")) || [];
+
+  if (options.length === 0) {
+    list.innerHTML = "";
+    return;
+  }
+
+  list.innerHTML = "";
+
+  options.forEach((option, index) => {
+    const div = document.createElement("div");
+    div.className = "journal-entry";
+
+    div.innerHTML = `
+      <strong>${option.ticker} ${option.strike} ${option.type}</strong><br>
+      Exp: ${option.expiration}<br>
+      Cost: $${option.cost} | Current: $${option.current}<br>
+      <small>${option.time}</small><br>
+      <button onclick="deleteOption(${index})">Delete</button>
+    `;
+
+    list.appendChild(div);
+  });
+
+  updateOptionsSummary(options);
+}
+
+function deleteOption(index) {
+  const options = JSON.parse(localStorage.getItem("optionsTracker")) || [];
+  options.splice(index, 1);
+  localStorage.setItem("optionsTracker", JSON.stringify(options));
+  renderOptions();
+}
+
+function updateOptionsSummary(options) {
+  const contracts = options.length;
+  let totalCost = 0;
+  let totalCurrent = 0;
+
+  options.forEach((option) => {
+    totalCost += Number(option.cost) || 0;
+    totalCurrent += Number(option.current) || 0;
+  });
+
+  const optionContracts = document.getElementById("option-contracts");
+  const optionCost = document.getElementById("option-cost");
+
+  if (optionContracts) optionContracts.textContent = contracts;
+  if (optionCost) optionCost.textContent = "$" + totalCost.toFixed(2);
+}
 
 window.approveTrade = approveTrade;
 window.rejectTrade = rejectTrade;
-window.deleteTrade = deleteTrade;
+window.clearJournal = clearJournal;
+window.addOption = addOption;
+window.deleteOption = deleteOption;
