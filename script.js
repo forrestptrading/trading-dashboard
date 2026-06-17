@@ -5,6 +5,17 @@ document.addEventListener("DOMContentLoaded", () => {
   loadOptions();
 
   setupMetricInputs();
+
+  const approveBtn = document.getElementById("approve-btn");
+  const rejectBtn = document.getElementById("reject-btn");
+
+  if (approveBtn) {
+    approveBtn.addEventListener("click", approveTrade);
+  }
+
+  if (rejectBtn) {
+    rejectBtn.addEventListener("click", rejectTrade);
+  }
 });
 
 function formatMoney(value) {
