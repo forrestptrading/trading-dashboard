@@ -165,23 +165,49 @@ window.deleteOption = deleteOption;
 
 function approveTrade() {
   const status = document.getElementById("trade-status");
+  const tradeIdea = document.getElementById("pending-trade-idea")?.textContent || "Unknown Trade";
 
-  if (!status) {
-    alert("Could not find trade-status.");
-    return;
-  }
+  if (!status) return;
 
   status.textContent = "Approved";
   status.style.color = "#00ff88";
+
+  localStorage.setItem("pendingTradeStatus", "Approved");
+
+  addTradeToJournal("APPROVED", tradeIdea);
 }
 
 function rejectTrade() {
   const status = document.getElementById("trade-status");
+  const tradeIdea = document.getElementById("pending-trade-idea")?.textContent || "Unknown Trade";
 
-  if (!status) {
-    alert("Could not find trade-status.");
-    return;
-  }
+  if (!status) return;
+
+  status.textContent = "Rejected";
+  status.style.color = "#ff4d4d";
+
+  localStorage.setItem("pendingTradeStatus", "Rejected");
+
+  addTradeToJournal("REJECTED", tradeIdea);
+}
+
+function addTradeToJournal(action, tradeIdea) {
+  const journal = document.getElementById("trade-journal-list");
+  if (!journal) return;
+
+  const emptyText = journal.querySelector("p");
+  if (emptyText) emptyText.remove();
+
+  const entry = document.createElement("div");
+  entry.className = "journal-entry";
+  entry.textContent = `${action}: ${tradeIdea}`;
+
+  journal.prepend(entry);
+
+  const savedTrades = JSON.parse(localStorage.getItem("tradeJournal")) || [];
+  savedTrades.unshift(`${action}: ${tradeIdea}`);
+  localStorage.setItem("tradeJournal", JSON.stringify(savedTrades));
+}
 
   status.textContent = "Rejected";
   status.style.color = "#ff4d4d";
@@ -191,6 +217,32 @@ function deleteTrade(button) {
   const card = button.closest(".trade-card");
   if (card) card.remove();
 }
+
+function loadSavedTradeData() {
+  const savedStatus = localStorage.getItem("pendingTradeStatus");
+  const status = document.getElementById("trade-status");
+
+  if (savedStatus && status) {
+    status.textContent = savedStatus;
+    status.style.color = savedStatus === "Approved" ? "#00ff88" : "#ff4d4d";
+  }
+
+  const journal = document.getElementById("trade-journal-list");
+  const savedTrades = JSON.parse(localStorage.getItem("tradeJournal")) || [];
+
+  if (journal && savedTrades.length > 0) {
+    journal.innerHTML = "";
+
+    savedTrades.forEach((trade) => {
+      const entry = document.createElement("div");
+      entry.className = "journal-entry";
+      entry.textContent = trade;
+      journal.appendChild(entry);
+    });
+  }
+}
+
+loadSavedTradeData();
 
 window.approveTrade = approveTrade;
 window.rejectTrade = rejectTrade;
