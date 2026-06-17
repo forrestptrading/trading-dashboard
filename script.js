@@ -119,7 +119,7 @@ function loadTradeStatus() {
 
 function addJournalEntry(action) {
   const tradeIdea =
-    document.getElementById("pending-trade-idea")?.textContent || "Unknown Trade";
+    document.getElementById("pending-trade-idea")?.textContent || "Unknown trade";
 
   const entry = {
     action: action,
@@ -131,10 +131,7 @@ function addJournalEntry(action) {
   journal.unshift(entry);
   localStorage.setItem("tradeJournal", JSON.stringify(journal));
 
-  renderJournal();
-}
-
-function loadJournal() {
+  updateTradeStatus(action);
   renderJournal();
 }
 
