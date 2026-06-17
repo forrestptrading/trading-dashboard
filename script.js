@@ -2,23 +2,16 @@ document.addEventListener("DOMContentLoaded", () => {
   loadMetrics();
   setupMetricInputs();
 
-  loadTradeStatus();
   setupTradeButtons();
-
+  loadTradeStatus();
   renderJournal();
+
   renderOptions();
 });
 
-/* =========================
-   HELPERS
-========================= */
+/* HELPERS */
 
-function formatMoney(value) {
-  const number = Number(value) || 0;
-  return "$" + number.toLocaleString();
-}
-
-function getSavedArray(key) {
+function getArray(key) {
   try {
     return JSON.parse(localStorage.getItem(key)) || [];
   } catch {
@@ -26,16 +19,19 @@ function getSavedArray(key) {
   }
 }
 
-function saveArray(key, array) {
-  localStorage.setItem(key, JSON.stringify(array));
+function saveArray(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
 }
 
-/* =========================
-   DASHBOARD METRICS
-========================= */
+function money(value) {
+  const num = Number(value) || 0;
+  return "$" + num.toLocaleString();
+}
+
+/* METRICS */
 
 function loadMetrics() {
-  const portfolio = localStorage.getItem("portfolioValue") || "10000";
+  const portfolio = localStorage.getItem("portfolioValue") || "500";
   const daily = localStorage.getItem("dailyPL") || "250";
   const buying = localStorage.getItem("buyingPower") || "3500";
 
@@ -51,18 +47,19 @@ function loadMetrics() {
   const dailyBox = document.getElementById("daily-pl");
   const buyingBox = document.getElementById("buying-power");
 
-  if (portfolioBox) portfolioBox.textContent = formatMoney(portfolio);
+  if (portfolioBox) portfolioBox.textContent = money(portfolio);
 
   if (dailyBox) {
-    const dailyNumber = Number(daily) || 0;
+    const dailyNum = Number(daily) || 0;
     dailyBox.textContent =
-      dailyNumber >= 0
-        ? "+$" + dailyNumber.toLocaleString()
-        : "-$" + Math.abs(dailyNumber).toLocaleString();
-    dailyBox.className = dailyNumber >= 0 ? "profit" : "loss";
+      dailyNum >= 0
+        ? "+$" + dailyNum.toLocaleString()
+        : "-$" + Math.abs(dailyNum).toLocaleString();
+
+    dailyBox.className = dailyNum >= 0 ? "profit" : "loss";
   }
 
-  if (buyingBox) buyingBox.textContent = formatMoney(buying);
+  if (buyingBox) buyingBox.textContent = money(buying);
 }
 
 function setupMetricInputs() {
@@ -71,30 +68,28 @@ function setupMetricInputs() {
   const buyingInput = document.getElementById("buying-input");
 
   if (portfolioInput) {
-    portfolioInput.addEventListener("input", () => {
+    portfolioInput.oninput = () => {
       localStorage.setItem("portfolioValue", portfolioInput.value);
       loadMetrics();
-    });
+    };
   }
 
   if (dailyInput) {
-    dailyInput.addEventListener("input", () => {
+    dailyInput.oninput = () => {
       localStorage.setItem("dailyPL", dailyInput.value);
       loadMetrics();
-    });
+    };
   }
 
   if (buyingInput) {
-    buyingInput.addEventListener("input", () => {
+    buyingInput.oninput = () => {
       localStorage.setItem("buyingPower", buyingInput.value);
       loadMetrics();
-    });
+    };
   }
 }
 
-/* =========================
-   PENDING TRADE APPROVAL
-========================= */
+/* TRADE APPROVAL */
 
 function setupTradeButtons() {
   const approveBtn = document.getElementById("approve-btn");
@@ -120,26 +115,26 @@ function updateTradeStatus(statusText) {
 }
 
 function loadTradeStatus() {
-  const savedStatus = localStorage.getItem("pendingTradeStatus");
+  const saved = localStorage.getItem("pendingTradeStatus");
   const status = document.getElementById("trade-status");
 
-  if (!savedStatus || !status) return;
+  if (!saved || !status) return;
 
-  status.textContent = savedStatus;
-  status.className = savedStatus === "Approved" ? "profit" : "loss";
+  status.textContent = saved;
+  status.className = saved === "Approved" ? "profit" : "loss";
 }
 
 function addJournalEntry(action) {
-  const tradeIdea =
+  const trade =
     document.getElementById("pending-trade-idea")?.textContent || "Unknown trade";
 
   const entry = {
-    action: action,
-    trade: tradeIdea,
+    action,
+    trade,
     time: new Date().toLocaleString()
   };
 
-  const journal = getSavedArray("tradeJournal");
+  const journal = getArray("tradeJournal");
   journal.unshift(entry);
   saveArray("tradeJournal", journal);
 
@@ -147,32 +142,40 @@ function addJournalEntry(action) {
   renderJournal();
 }
 
-/* =========================
-   TRADE JOURNAL
-========================= */
+/* TRADE JOURNAL */
 
 function renderJournal() {
-  const journalBox = document.getElementById("trade-journal-list");
-  if (!journalBox) return;
+  const box = document.getElementById("trade-journal-list");
+  if (!box) return;
 
-  const journal = getSavedArray("tradeJournal");
+  const journal = getArray("tradeJournal");
 
-  journalBox.innerHTML = "";
+  box.innerHTML = "";
 
   if (journal.length === 0) {
-    journalBox.innerHTML = "<p>No trades recorded yet.</p>";
+    box.innerHTML = "<p>No trades recorded yet.</p>";
     return;
   }
 
-  journal.forEach((item) => {
+  journal.forEach((item, index) => {
     const div = document.createElement("div");
     div.className = "journal-entry";
+
     div.innerHTML = `
       <strong>${item.action}</strong>: ${item.trade}<br>
-      <small>${item.time}</small>
+      <small>${item.time}</small><br>
+      <button onclick="deleteJournalEntry(${index})">Delete</button>
     `;
-    journalBox.appendChild(div);
+
+    box.appendChild(div);
   });
+}
+
+function deleteJournalEntry(index) {
+  const journal = getArray("tradeJournal");
+  journal.splice(index, 1);
+  saveArray("tradeJournal", journal);
+  renderJournal();
 }
 
 function clearJournal() {
@@ -180,14 +183,12 @@ function clearJournal() {
   renderJournal();
 }
 
-/* =========================
-   OPTIONS TRACKER
-========================= */
+/* OPTIONS TRACKER */
 
 function addOption() {
-  const ticker = document.getElementById("ticker")?.value.trim();
+  const ticker = document.getElementById("ticker")?.value.trim().toUpperCase();
   const strike = document.getElementById("strike")?.value.trim();
-  const type = document.getElementById("type")?.value;
+  const type = document.getElementById("type")?.value || "Call";
   const expiration = document.getElementById("expiration")?.value.trim();
   const cost = document.getElementById("cost")?.value.trim();
   const current = document.getElementById("current")?.value.trim();
@@ -207,7 +208,7 @@ function addOption() {
     time: new Date().toLocaleString()
   };
 
-  const options = getSavedArray("optionsTracker");
+  const options = getArray("optionsTracker");
   options.unshift(option);
   saveArray("optionsTracker", options);
 
@@ -224,38 +225,36 @@ function clearOptionInputs() {
 
 function renderOptions() {
   const list = document.getElementById("options-list");
-  if (!list) return;
+  const options = getArray("optionsTracker");
 
-  const options = getSavedArray("optionsTracker");
+  if (list) {
+    list.innerHTML = "";
 
-  list.innerHTML = "";
+    if (options.length === 0) {
+      list.innerHTML = "<p>No options tracked yet.</p>";
+    } else {
+      options.forEach((option, index) => {
+        const div = document.createElement("div");
+        div.className = "journal-entry";
 
-  if (options.length === 0) {
-    list.innerHTML = "<p>No options tracked yet.</p>";
-    updateOptionsSummary(options);
-    return;
+        div.innerHTML = `
+          <strong>${option.ticker} ${option.strike} ${option.type}</strong><br>
+          Exp: ${option.expiration}<br>
+          Cost: $${option.cost} | Current: $${option.current}<br>
+          <small>${option.time}</small><br>
+          <button onclick="deleteOption(${index})">Delete</button>
+        `;
+
+        list.appendChild(div);
+      });
+    }
   }
-
-  options.forEach((option, index) => {
-    const div = document.createElement("div");
-    div.className = "journal-entry";
-
-    div.innerHTML = `
-      <strong>${option.ticker} ${option.strike} ${option.type}</strong><br>
-      Exp: ${option.expiration}<br>
-      Cost: $${option.cost} | Current: $${option.current}<br>
-      <small>${option.time}</small><br>
-      <button onclick="deleteOption(${index})">Delete</button>
-    `;
-
-    list.appendChild(div);
-  });
 
   updateOptionsSummary(options);
 }
 
 function deleteOption(index) {
-  const options = getSavedArray("optionsTracker");
+  const options = getArray("optionsTracker");
   options.splice(index, 1);
   saveArray("optionsTracker", options);
   renderOptions();
@@ -265,30 +264,43 @@ function updateOptionsSummary(options) {
   const contracts = options.length;
   let totalCost = 0;
   let totalCurrent = 0;
+  let calls = 0;
+  let puts = 0;
 
   options.forEach((option) => {
     totalCost += Number(option.cost) || 0;
     totalCurrent += Number(option.current) || 0;
+
+    if ((option.type || "").toLowerCase().includes("put")) {
+      puts++;
+    } else {
+      calls++;
+    }
   });
 
-  const optionContracts = document.getElementById("option-contracts");
-  const optionCost = document.getElementById("option-cost");
-  const optionCurrent = document.getElementById("option-current");
+  const pl = totalCurrent - totalCost;
+  const returnPercent = totalCost > 0 ? (pl / totalCost) * 100 : 0;
+
+  setText("option-contracts", contracts);
+  setText("option-cost", "$" + totalCost.toFixed(2));
+  setText("option-current", "$" + totalCurrent.toFixed(2));
+  setText("option-pl", pl >= 0 ? "+$" + pl.toFixed(2) : "-$" + Math.abs(pl).toFixed(2));
+  setText("option-return", returnPercent.toFixed(1) + "%");
+
+  setText("risk-total-contracts", contracts);
+  setText("risk-calls", calls);
+  setText("risk-puts", puts);
+  setText("risk-exposure", "$" + (totalCost * 100).toFixed(2));
+  setText("risk-level", contracts >= 3 ? "High" : contracts >= 1 ? "Moderate" : "Low");
+
   const optionPL = document.getElementById("option-pl");
-
-  if (optionContracts) optionContracts.textContent = contracts;
-  if (optionCost) optionCost.textContent = "$" + totalCost.toFixed(2);
-  if (optionCurrent) optionCurrent.textContent = "$" + totalCurrent.toFixed(2);
-
-  if (optionPL) {
-    const pl = totalCurrent - totalCost;
-    optionPL.textContent =
-      pl >= 0 ? "+$" + pl.toFixed(2) : "-$" + Math.abs(pl).toFixed(2);
-    optionPL.className = pl >= 0 ? "profit" : "loss";
-  }
+  if (optionPL) optionPL.className = pl >= 0 ? "profit" : "loss";
 }
 
-
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
 
 
 
