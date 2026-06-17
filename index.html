@@ -26,7 +26,70 @@
         <input id="input-buying-power" type="number" value="3500">
         <strong id="summary-buying-power">$0.00</strong>
     </div>
+     
+        <div class="card">
+    <h2>💰 Robinhood Portfolio</h2>
+
+    <div class="position-row">
+        <span>Account Value</span>
+        <span id="rh-account-value">$0.00</span>
+    </div>
+
+    <div class="position-row">
+        <span>Buying Power</span>
+        <span id="rh-buying-power">$0.00</span>
+    </div>
+
+    <div class="position-row">
+        <span>Day P/L</span>
+        <span id="rh-day-pl">$0.00</span>
+    </div>
+
+    <div class="position-row">
+        <span>Open Positions</span>
+        <span id="rh-open-positions">0</span>
+    </div>
+
+    <div class="position-row">
+        <span>Options Held</span>
+        <span id="rh-options-held">0</span>
+    </div>
+
+    <div class="position-row">
+        <span>Last Sync</span>
+        <span id="rh-portfolio-sync">Never</span>
+    </div>
 </div>
+
+    <div class="card pending-trade-card">
+        <h2>✅ Pending Trade Approval</h2>
+
+        <div class="position-row">
+            <span>Trade Idea</span>
+            <span id="pending-trade-idea">NVDA 180 Call</span>
+        </div>
+
+        <div class="position-row">
+            <span>Confidence</span>
+            <span id="pending-confidence" class="profit">87%</span>
+        </div>
+
+        <div class="position-row">
+            <span>Risk</span>
+            <span id="pending-risk">Moderate</span>
+        </div>
+
+        <div class="position-row">
+            <span>Status</span>
+            <span id="trade-status">Waiting</span>
+        </div>
+
+        <div class="action-buttons">
+            <button class="approve-btn" onclick="approveTrade()">Approve Trade</button>
+            <button class="reject-btn" onclick="rejectTrade()">Reject Trade</button>
+    </div>
+</div>
+    
     <div class="card">
         <h2>🤖 AI Analysis</h2>
         <p id="ai-analysis">Waiting for AI signal...</p>
@@ -65,11 +128,6 @@
         </div>
     </div>
 
-    <div class="card">
-        <h2>🤖 AI Options Idea</h2>
-        <div id="option-idea">Waiting for AI option setup...</div>
-    </div>
-    
     <div class="card">
   <h2>📜 Recent Trades</h2>
 
@@ -207,47 +265,6 @@
         </div>
     </div>
 
-    <div class="card">
-    <h2>💰 Robinhood Portfolio</h2>
-
-    <div class="position-row">
-        <span>Account Value</span>
-        <span id="rh-account-value">$0.00</span>
-    </div>
-
-    <div class="position-row">
-        <span>Buying Power</span>
-        <span id="rh-buying-power">$0.00</span>
-    </div>
-
-    <div class="position-row">
-        <span>Day P/L</span>
-        <span id="rh-day-pl">$0.00</span>
-    </div>
-
-    <div class="position-row">
-        <span>Open Positions</span>
-        <span id="rh-open-positions">0</span>
-    </div>
-
-    <div class="position-row">
-        <span>Options Held</span>
-        <span id="rh-options-held">0</span>
-    </div>
-
-    <div class="position-row">
-        <span>Last Sync</span>
-        <span id="rh-portfolio-sync">Never</span>
-    </div>
-</div>
-    
-    <div class="card">
-        <h2>🤖 AI Trade Assistant</h2>
-        <div id="ai-trade-assistant">
-            AI status: Not connected yet<br><br>
-            Future AI analysis will appear here.
-        </div>
-    </div>
 
     <div class="card pending-trade-card">
         <h2>✅ Pending Trade Approval</h2>
