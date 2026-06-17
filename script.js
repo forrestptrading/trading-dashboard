@@ -163,28 +163,28 @@ function deleteOption(index) {
 window.addOption = addOption;
 window.deleteOption = deleteOption;
 
+function approveTrade() {
+  const status = document.getElementById("trade-status");
 
-// ===== Trade Journal Safety =====
-function approveTrade(button) {
-  const card = button.closest(".trade-card");
-  if (!card) return;
-
-  const status = card.querySelector(".trade-status");
-  if (status) {
-    status.textContent = "Approved";
-    status.className = "trade-status approved";
+  if (!status) {
+    alert("Could not find trade-status.");
+    return;
   }
+
+  status.textContent = "Approved";
+  status.style.color = "#00ff88";
 }
 
-function rejectTrade(button) {
-  const card = button.closest(".trade-card");
-  if (!card) return;
+function rejectTrade() {
+  const status = document.getElementById("trade-status");
 
-  const status = card.querySelector(".trade-status");
-  if (status) {
-    status.textContent = "Rejected";
-    status.className = "trade-status rejected";
+  if (!status) {
+    alert("Could not find trade-status.");
+    return;
   }
+
+  status.textContent = "Rejected";
+  status.style.color = "#ff4d4d";
 }
 
 function deleteTrade(button) {
