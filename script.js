@@ -1,57 +1,38 @@
 document.addEventListener("DOMContentLoaded", () => {
   loadMetrics();
-  loadTradeStatus();
-  loadJournal();
-  loadOptions();
-
   setupMetricInputs();
 
-  const approveBtn = document.getElementById("approve-btn");
-  const rejectBtn = document.getElementById("reject-btn");
+  loadTradeStatus();
+  setupTradeButtons();
 
- if (approveBtn) {
-  approveBtn.addEventListener("click", () => addJournalEntry("Approved"));
-}
-
-if (rejectBtn) {
-  rejectBtn.addEventListener("click", () => addJournalEntry("Rejected"));
-}
+  renderJournal();
+  renderOptions();
 });
+
+/* =========================
+   HELPERS
+========================= */
 
 function formatMoney(value) {
   const number = Number(value) || 0;
   return "$" + number.toLocaleString();
 }
 
-function setupMetricInputs() {
-  const portfolioInput = document.getElementById("portfolio-input");
-  const dailyInput = document.getElementById("daily-input");
-  const buyingInput = document.getElementById("buying-input");
-
-  if (portfolioInput) {
-    portfolioInput.addEventListener("input", () => {
-      localStorage.setItem("portfolioValue", portfolioInput.value);
-      document.getElementById("portfolio-value").textContent = formatMoney(portfolioInput.value);
-    });
-  }
-
-  if (dailyInput) {
-    dailyInput.addEventListener("input", () => {
-      localStorage.setItem("dailyPL", dailyInput.value);
-      const dailyPL = document.getElementById("daily-pl");
-      const value = Number(dailyInput.value) || 0;
-      dailyPL.textContent = value >= 0 ? "+$" + value.toLocaleString() : "-$" + Math.abs(value).toLocaleString();
-      dailyPL.className = value >= 0 ? "profit" : "loss";
-    });
-  }
-
-  if (buyingInput) {
-    buyingInput.addEventListener("input", () => {
-      localStorage.setItem("buyingPower", buyingInput.value);
-      document.getElementById("buying-power").textContent = formatMoney(buyingInput.value);
-    });
+function getSavedArray(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || [];
+  } catch {
+    return [];
   }
 }
+
+function saveArray(key, array) {
+  localStorage.setItem(key, JSON.stringify(array));
+}
+
+/* =========================
+   DASHBOARD METRICS
+========================= */
 
 function loadMetrics() {
   const portfolio = localStorage.getItem("portfolioValue") || "10000";
@@ -66,35 +47,66 @@ function loadMetrics() {
   if (dailyInput) dailyInput.value = daily;
   if (buyingInput) buyingInput.value = buying;
 
-  if (document.getElementById("portfolio-value")) {
-    document.getElementById("portfolio-value").textContent = formatMoney(portfolio);
+  const portfolioBox = document.getElementById("portfolio-value");
+  const dailyBox = document.getElementById("daily-pl");
+  const buyingBox = document.getElementById("buying-power");
+
+  if (portfolioBox) portfolioBox.textContent = formatMoney(portfolio);
+
+  if (dailyBox) {
+    const dailyNumber = Number(daily) || 0;
+    dailyBox.textContent =
+      dailyNumber >= 0
+        ? "+$" + dailyNumber.toLocaleString()
+        : "-$" + Math.abs(dailyNumber).toLocaleString();
+    dailyBox.className = dailyNumber >= 0 ? "profit" : "loss";
   }
 
-  if (document.getElementById("buying-power")) {
-    document.getElementById("buying-power").textContent = formatMoney(buying);
+  if (buyingBox) buyingBox.textContent = formatMoney(buying);
+}
+
+function setupMetricInputs() {
+  const portfolioInput = document.getElementById("portfolio-input");
+  const dailyInput = document.getElementById("daily-input");
+  const buyingInput = document.getElementById("buying-input");
+
+  if (portfolioInput) {
+    portfolioInput.addEventListener("input", () => {
+      localStorage.setItem("portfolioValue", portfolioInput.value);
+      loadMetrics();
+    });
   }
 
-  const dailyPL = document.getElementById("daily-pl");
-  const dailyValue = Number(daily) || 0;
+  if (dailyInput) {
+    dailyInput.addEventListener("input", () => {
+      localStorage.setItem("dailyPL", dailyInput.value);
+      loadMetrics();
+    });
+  }
 
-  if (dailyPL) {
-    dailyPL.textContent =
-      dailyValue >= 0
-        ? "+$" + dailyValue.toLocaleString()
-        : "-$" + Math.abs(dailyValue).toLocaleString();
-
-    dailyPL.className = dailyValue >= 0 ? "profit" : "loss";
+  if (buyingInput) {
+    buyingInput.addEventListener("input", () => {
+      localStorage.setItem("buyingPower", buyingInput.value);
+      loadMetrics();
+    });
   }
 }
 
-function approveTrade() {
-  updateTradeStatus("Approved");
-  addJournalEntry("APPROVED");
-}
+/* =========================
+   PENDING TRADE APPROVAL
+========================= */
 
-function rejectTrade() {
-  updateTradeStatus("Rejected");
-  addJournalEntry("REJECTED");
+function setupTradeButtons() {
+  const approveBtn = document.getElementById("approve-btn");
+  const rejectBtn = document.getElementById("reject-btn");
+
+  if (approveBtn) {
+    approveBtn.onclick = () => addJournalEntry("Approved");
+  }
+
+  if (rejectBtn) {
+    rejectBtn.onclick = () => addJournalEntry("Rejected");
+  }
 }
 
 function updateTradeStatus(statusText) {
@@ -127,26 +139,30 @@ function addJournalEntry(action) {
     time: new Date().toLocaleString()
   };
 
-  const journal = JSON.parse(localStorage.getItem("tradeJournal")) || [];
+  const journal = getSavedArray("tradeJournal");
   journal.unshift(entry);
-  localStorage.setItem("tradeJournal", JSON.stringify(journal));
+  saveArray("tradeJournal", journal);
 
   updateTradeStatus(action);
   renderJournal();
 }
 
+/* =========================
+   TRADE JOURNAL
+========================= */
+
 function renderJournal() {
   const journalBox = document.getElementById("trade-journal-list");
   if (!journalBox) return;
 
-  const journal = JSON.parse(localStorage.getItem("tradeJournal")) || [];
+  const journal = getSavedArray("tradeJournal");
+
+  journalBox.innerHTML = "";
 
   if (journal.length === 0) {
     journalBox.innerHTML = "<p>No trades recorded yet.</p>";
     return;
   }
-
-  journalBox.innerHTML = "";
 
   journal.forEach((item) => {
     const div = document.createElement("div");
@@ -163,6 +179,10 @@ function clearJournal() {
   localStorage.removeItem("tradeJournal");
   renderJournal();
 }
+
+/* =========================
+   OPTIONS TRACKER
+========================= */
 
 function addOption() {
   const ticker = document.getElementById("ticker")?.value.trim();
@@ -187,9 +207,9 @@ function addOption() {
     time: new Date().toLocaleString()
   };
 
-  const options = JSON.parse(localStorage.getItem("optionsTracker")) || [];
+  const options = getSavedArray("optionsTracker");
   options.unshift(option);
-  localStorage.setItem("optionsTracker", JSON.stringify(options));
+  saveArray("optionsTracker", options);
 
   clearOptionInputs();
   renderOptions();
@@ -202,22 +222,19 @@ function clearOptionInputs() {
   });
 }
 
-function loadOptions() {
-  renderOptions();
-}
-
 function renderOptions() {
   const list = document.getElementById("options-list");
   if (!list) return;
 
-  const options = JSON.parse(localStorage.getItem("optionsTracker")) || [];
-
-  if (options.length === 0) {
-    list.innerHTML = "";
-    return;
-  }
+  const options = getSavedArray("optionsTracker");
 
   list.innerHTML = "";
+
+  if (options.length === 0) {
+    list.innerHTML = "<p>No options tracked yet.</p>";
+    updateOptionsSummary(options);
+    return;
+  }
 
   options.forEach((option, index) => {
     const div = document.createElement("div");
@@ -238,9 +255,9 @@ function renderOptions() {
 }
 
 function deleteOption(index) {
-  const options = JSON.parse(localStorage.getItem("optionsTracker")) || [];
+  const options = getSavedArray("optionsTracker");
   options.splice(index, 1);
-  localStorage.setItem("optionsTracker", JSON.stringify(options));
+  saveArray("optionsTracker", options);
   renderOptions();
 }
 
@@ -256,13 +273,41 @@ function updateOptionsSummary(options) {
 
   const optionContracts = document.getElementById("option-contracts");
   const optionCost = document.getElementById("option-cost");
+  const optionCurrent = document.getElementById("option-current");
+  const optionPL = document.getElementById("option-pl");
 
   if (optionContracts) optionContracts.textContent = contracts;
   if (optionCost) optionCost.textContent = "$" + totalCost.toFixed(2);
+  if (optionCurrent) optionCurrent.textContent = "$" + totalCurrent.toFixed(2);
+
+  if (optionPL) {
+    const pl = totalCurrent - totalCost;
+    optionPL.textContent =
+      pl >= 0 ? "+$" + pl.toFixed(2) : "-$" + Math.abs(pl).toFixed(2);
+    optionPL.className = pl >= 0 ? "profit" : "loss";
+  }
 }
 
-window.approveTrade = approveTrade;
-window.rejectTrade = rejectTrade;
-window.clearJournal = clearJournal;
-window.addOption = addOption;
-window.deleteOption = deleteOption;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
