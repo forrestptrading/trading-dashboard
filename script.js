@@ -9,13 +9,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const approveBtn = document.getElementById("approve-btn");
   const rejectBtn = document.getElementById("reject-btn");
 
-  if (approveBtn) {
-    approveBtn.addEventListener("click", approveTrade);
-  }
+ if (approveBtn) {
+  approveBtn.addEventListener("click", () => addJournalEntry("Approved"));
+}
 
-  if (rejectBtn) {
-    rejectBtn.addEventListener("click", rejectTrade);
-  }
+if (rejectBtn) {
+  rejectBtn.addEventListener("click", () => addJournalEntry("Rejected"));
+}
 });
 
 function formatMoney(value) {
