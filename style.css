@@ -40,6 +40,7 @@ body {
   text-align: left;
   font-size: 17px;
   border-radius: 4px;
+  font-family: monospace;
 }
 
 .nav-btn.active,
@@ -58,19 +59,19 @@ body {
   color: #9ca7bb;
 }
 
-#systemStatus,
+.sidebar-bottom span,
 .positive {
   color: #00f5ff;
 }
 
-.negative,
-.red {
+.negative {
   color: #ff4d4d;
 }
 
 .main {
   margin-left: 260px;
   min-height: 100vh;
+  background: #080b10;
 }
 
 .ticker-bar {
@@ -168,8 +169,10 @@ h2 {
 .mover-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid #1b2432;
   padding: 13px 0;
+  gap: 10px;
 }
 
 .movers {
@@ -202,6 +205,7 @@ button.reject {
   border: none;
   border-radius: 5px;
   color: white;
+  font-family: monospace;
 }
 
 button.approve {
@@ -228,6 +232,7 @@ button.reject {
   padding: 4px 8px;
   border-radius: 4px;
   background: #111b27;
+  color: #9ca7bb;
 }
 
 code {
@@ -240,10 +245,42 @@ code {
 canvas {
   margin-top: 25px;
   width: 100%;
+  height: 130px;
   background: #080b10;
   border-radius: 6px;
 }
 
+@media (max-width: 900px) {
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+
+  .sidebar-bottom {
+    position: relative;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin-top: 20px;
+  }
+
+  .main {
+    margin-left: 0;
+  }
+
+  .grid,
+  .overview-grid,
+  .stats-row,
+  .watchlist-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .big-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 
 
 
