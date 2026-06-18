@@ -3,167 +3,181 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Forrest's Trading Terminal</title>
+  <title>Terminal/01 Trading Dashboard</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
+  <aside class="sidebar">
+    <h1><span>TERMINAL</span>/01</h1>
 
-  <main class="dashboard">
-    <h1>📈 Forrest's Trading Terminal</h1>
+    <button class="nav-btn active" data-page="overview">Overview</button>
+    <button class="nav-btn" data-page="positions">Positions</button>
+    <button class="nav-btn" data-page="options">Options</button>
+    <button class="nav-btn" data-page="watchlist">Watchlist</button>
+    <button class="nav-btn" data-page="activity">Activity</button>
+    <button class="nav-btn" data-page="settings">Settings</button>
 
-    <section class="top-grid">
-      <div class="card metric-card">
-        <label>Portfolio</label>
-        <input id="portfolio-input" type="number" value="10000" />
-        <h2 id="portfolio-value">$10,000</h2>
-      </div>
+    <div class="sidebar-bottom">
+      <p>SYS STATUS <span id="systemStatus">● ONLINE</span></p>
+      <p id="backendStatus">Backend Checking...</p>
+      <button class="signout-btn">Sign Out</button>
+    </div>
+  </aside>
 
-      <div class="card metric-card">
-        <label>Daily P/L</label>
-        <input id="daily-input" type="number" value="250" />
-        <h2 id="daily-pl" class="profit">+$250</h2>
-      </div>
+  <main class="main">
+    <div class="ticker-bar" id="tickerBar"></div>
 
-      <div class="card metric-card">
-        <label>Buying Power</label>
-        <input id="buying-input" type="number" value="3500" />
-        <h2 id="buying-power">$3,500</h2>
-      </div>
-    </section>
+    <section class="page active" id="overview">
+      <h2>Overview</h2>
+      <p class="subtitle">Portfolio Summary & Market Status</p>
 
-    <section class="card">
-      <h2>💰 Robinhood Portfolio</h2>
-      <div class="row"><span>Account Value</span><strong id="rh-account-value">$0.00</strong></div>
-      <div class="row"><span>Buying Power</span><strong id="rh-buying-power">$0.00</strong></div>
-      <div class="row"><span>Day P/L</span><strong id="rh-day-pl">$0.00</strong></div>
-      <div class="row"><span>Open Positions</span><strong id="rh-open-positions">0</strong></div>
-      <div class="row"><span>Options Held</span><strong id="rh-options-held">0</strong></div>
-      <div class="row"><span>Last Sync</span><strong>Never</strong></div>
-    </section>
+      <div class="grid overview-grid">
+        <div class="card portfolio-card">
+          <p class="label">Total Value</p>
+          <div class="big-row">
+            <h3 id="totalValue">$52,341.87</h3>
+            <span id="dailyChange" class="positive">+$412.34 (+0.79%)</span>
+          </div>
 
-    <section class="card">
-      <h2>🤖 AI Command Center</h2>
-      <div class="row"><span>Market Bias</span><strong>Space Sector Watch</strong></div>
-      <div class="row"><span>Top Watch</span><strong>SPCX</strong></div>
-      <div class="row"><span>Confidence</span><strong class="profit">68%</strong></div>
-      <div class="row"><span>Risk Level</span><strong>High</strong></div>
-    </section>
+          <div class="stats-row">
+            <div><p>Cash</p><strong id="cashValue">$3,241.56</strong></div>
+            <div><p>Invested</p><strong id="investedValue">$49,100.31</strong></div>
+            <div><p>Buying Power</p><strong id="buyingPower">$3,241.56</strong></div>
+            <div><p>Total Return</p><strong class="positive" id="totalReturn">+$7,241.87</strong></div>
+          </div>
 
-    <section class="card">
-      <h2>✅ Pending Trade Approval</h2>
-      <div class="row"><span>Trade Idea</span><strong id="pending-trade-idea">NVDA 180 Call</strong></div>
-      <div class="row"><span>Confidence</span><strong class="profit">87%</strong></div>
-      <div class="row"><span>Risk</span><strong>Moderate</strong></div>
-      <div class="row"><span>Status</span><strong id="trade-status">Waiting</strong></div>
+          <canvas id="portfolioChart" height="130"></canvas>
+        </div>
 
-      <div class="button-stack">
-        <button class="approve-btn" id="approve-btn" onclick="addJournalEntry('Approved')">Approve Trade</button>
-        <button class="reject-btn" id="reject-btn" onclick="addJournalEntry('Rejected')">Reject Trade</button>
-      </div>
-    </section>
+        <div class="card">
+          <p class="label">Market Status</p>
+          <div class="market-open">OPEN <span>Markets open</span></div>
+          <div id="marketStatusList"></div>
+        </div>
 
-    <section class="card">
-      <h2>📊 Live Chart: AGQ</h2>
-      <p>Live chart placeholder. Robinhood/market data coming later.</p>
-    </section>
+        <div class="card">
+          <p class="label">Top Movers</p>
+          <div class="movers">
+            <div>
+              <h4>Gainers</h4>
+              <div id="gainersList"></div>
+            </div>
+            <div>
+              <h4 class="red">Losers</h4>
+              <div id="losersList"></div>
+            </div>
+          </div>
+        </div>
 
-    <section class="card">
-      <h2>📊 Portfolio Performance</h2>
-      <svg viewBox="0 0 300 120" class="mini-chart">
-        <polyline
-          fill="none"
-          stroke="#00ff88"
-          stroke-width="4"
-          points="10,95 50,80 90,85 130,60 170,65 210,40 250,35 290,25"
-        />
-      </svg>
-      <div class="row"><span>1 Week</span><strong class="profit">+8.1%</strong></div>
-      <div class="row"><span>1 Month</span><strong class="profit">+14.7%</strong></div>
-      <div class="row"><span>YTD</span><strong class="profit">+31.4%</strong></div>
-    </section>
-
-    <section class="card">
-      <h2>📊 Open Positions</h2>
-      <div class="row"><span>NVDA 180 Call</span><strong class="profit">+12.4%</strong></div>
-      <div class="row"><span>IWM 286 Call</span><strong class="loss">-1.1%</strong></div>
-      <div class="row"><span>TSLA Shares</span><strong class="profit">+3.2%</strong></div>
-    </section>
-
-    <section class="card">
-      <h2>📈 Watchlist</h2>
-      <div class="row"><span>AGQ</span><strong class="profit">+2.3%</strong></div>
-      <div class="row"><span>SPCX</span><strong class="loss">-1.1%</strong></div>
-      <div class="row"><span>TSLA</span><strong class="profit">+0.4%</strong></div>
-      <div class="row"><span>NVDA</span><strong class="profit">+0.8%</strong></div>
-      <div class="row"><span>IWM</span><strong class="profit">+0.6%</strong></div>
-    </section>
-
-    <section class="card">
-      <h2>📊 Options Portfolio</h2>
-      <div class="row"><span>Contracts</span><strong id="option-contracts">1</strong></div>
-      <div class="row"><span>Total Cost</span><strong id="option-cost">$9.00</strong></div>
-      <div class="row"><span>Current Value</span><strong>$25.00</strong></div>
-      <div class="row"><span>Total P/L</span><strong>$0.00</strong></div>
-      <div class="row"><span>Return</span><strong>177.8%</strong></div>
-    </section>
-
-    <section class="card">
-      <h2>⚠️ Options Risk Analysis</h2>
-      <div class="row"><span>Total Contracts</span><strong>1</strong></div>
-      <div class="row"><span>Calls</span><strong>1</strong></div>
-      <div class="row"><span>Puts</span><strong>0</strong></div>
-      <div class="row"><span>Options Exposure</span><strong>$9.00</strong></div>
-      <div class="row"><span>Risk Level</span><strong>High</strong></div>
-    </section>
-
-    <section class="card">
-      <h2>🔗 Robinhood Integration</h2>
-      <div class="row"><span>Status</span><strong class="profit">Connected</strong></div>
-      <div class="row"><span>Account Sync</span><strong>Waiting</strong></div>
-      <div class="row"><span>Backend</span><strong>Not live yet</strong></div>
-      <div class="row"><span>Approval Required</span><strong>Yes</strong></div>
-    </section>
-
-    <section class="card">
-      <h2>📝 Options Tracker</h2>
-      <input id="ticker" placeholder="Ticker" />
-      <input id="strike" placeholder="Strike" />
-      <select id="type">
-        <option>Call</option>
-        <option>Put</option>
-      </select>
-      <input id="expiration" placeholder="Expiration" />
-      <input id="cost" placeholder="Cost" />
-      <input id="current" placeholder="Current" />
-      <button onclick="addOption()">Add Option</button>
-      <div id="options-list"></div>
-    </section>
-
-    <section class="card">
-      <h2>📜 Recent Trades</h2>
-      <div id="recent-trades">
-        <p>BUY 1 IWM 286C 6/19 <strong>$0.09</strong></p>
-        <p>BUY 1 TSLA Call <strong>$0.60</strong></p>
-        <p>SELL 2 NVDA Calls <strong>+$85</strong></p>
+        <div class="card">
+          <p class="label">Recent Activity</p>
+          <div id="recentActivity"></div>
+        </div>
       </div>
     </section>
 
-    <section class="card">
-      <h2>🗄️ Trade Journal</h2>
-      <div id="trade-journal-list">
-        <p>No trades recorded yet.</p>
+    <section class="page" id="positions">
+      <h2>Positions</h2>
+      <p class="subtitle">Stocks, Shares, Cost Basis & Profit/Loss</p>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Shares</th>
+              <th>Avg Cost</th>
+              <th>Current</th>
+              <th>Market Value</th>
+              <th>P/L $</th>
+              <th>P/L %</th>
+            </tr>
+          </thead>
+          <tbody id="positionsTable"></tbody>
+        </table>
       </div>
-      <button class="clear-btn" onclick="clearJournal()">Clear Journal</button>
     </section>
 
-    <section class="card">
-      <h2>Market Status</h2>
-      <p>Checking...</p>
-      <p>9:30 AM - 4:00 PM ET</p>
+    <section class="page" id="options">
+      <h2>Options</h2>
+      <p class="subtitle">Contracts, Risk & Approval Flow</p>
+
+      <div class="grid">
+        <div class="card">
+          <p class="label">Options Tracker</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Type</th>
+                <th>Strike</th>
+                <th>Exp</th>
+                <th>Avg</th>
+                <th>Current</th>
+                <th>P/L</th>
+              </tr>
+            </thead>
+            <tbody id="optionsTable"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <p class="label">Pending Trade Approval</p>
+          <div id="pendingTrade"></div>
+          <button id="approveBtn" class="approve">Approve</button>
+          <button id="rejectBtn" class="reject">Reject</button>
+        </div>
+
+        <div class="card">
+          <p class="label">Options Risk Analysis</p>
+          <div id="riskBox"></div>
+        </div>
+      </div>
     </section>
 
+    <section class="page" id="watchlist">
+      <h2>Watchlist</h2>
+      <p class="subtitle">Tracked Market Symbols</p>
+
+      <div class="card">
+        <div id="watchlistGrid" class="watchlist-grid"></div>
+      </div>
+    </section>
+
+    <section class="page" id="activity">
+      <h2>Activity</h2>
+      <p class="subtitle">Trade Journal & Account History</p>
+
+      <div class="card">
+        <div id="activityLog"></div>
+      </div>
+    </section>
+
+    <section class="page" id="settings">
+      <h2>Settings</h2>
+      <p class="subtitle">Connections & System Status</p>
+
+      <div class="grid">
+        <div class="card">
+          <p class="label">Robinhood Connection</p>
+          <p id="robinhoodStatus">🔴 Robinhood Not Authenticated</p>
+          <p class="muted">Backend URL:</p>
+          <code>https://trade-dashboard-api--forrestpbusines.replit.app</code>
+        </div>
+
+        <div class="card">
+          <p class="label">AI Trade Assistant</p>
+          <p>Waiting for live portfolio data before giving trade analysis.</p>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <script src="script.js?v=17"></script>
+  <script src="script.js"></script>
 </body>
 </html>
+
+
+
+
