@@ -53,7 +53,7 @@ const pendingTrades = [
 
 let currentPendingIndex = 0;
 
-const activity = JSON.parse(localStorage.getItem("activityLog")) || [
+let activity = JSON.parse(localStorage.getItem("activityLog")) || [
   ["BUY", "MSFT", "-$2,044.55", "PENDING"],
   ["WITHDRAWAL", "Bank of America ****1234", "$1,500.00", "PENDING"],
   ["BUY", "NVDA", "-$3,328.56", "COMPLETED"],
@@ -76,18 +76,18 @@ function saveActivity() {
 }
 
 function loadOverview() {
-  document.getElementById("totalValue").textContent = money(portfolio.totalValue);
-  document.getElementById("dailyChange").textContent =
-    `${portfolio.dailyChange > 0 ? "+" : ""}${money(portfolio.dailyChange)} (${percent(portfolio.dailyPercent)})`;
-  document.getElementById("cashValue").textContent = money(portfolio.cash);
-  document.getElementById("investedValue").textContent = money(portfolio.invested);
-  document.getElementById("buyingPower").textContent = money(portfolio.buyingPower);
-  document.getElementById("totalReturn").textContent = `+${money(portfolio.totalReturn)}`;
+  totalValue.textContent = money(portfolio.totalValue);
+  dailyChange.textContent = `+${money(portfolio.dailyChange)} (${percent(portfolio.dailyPercent)})`;
+  dailyChange.className = "positive";
+  cashValue.textContent = money(portfolio.cash);
+  investedValue.textContent = money(portfolio.invested);
+  buyingPower.textContent = money(portfolio.buyingPower);
+  totalReturn.textContent = `+${money(portfolio.totalReturn)}`;
+  totalReturn.className = "positive";
 }
 
 function loadTickerBar() {
-  const bar = document.getElementById("tickerBar");
-  bar.innerHTML = tickers
+  tickerBar.innerHTML = tickers
     .map(([symbol, price, change]) => {
       const cls = change >= 0 ? "positive" : "negative";
       return `<span>${symbol} ${price.toFixed(2)} <b class="${cls}">${percent(change)}</b></span>`;
@@ -96,7 +96,7 @@ function loadTickerBar() {
 }
 
 function loadMarketStatus() {
-  document.getElementById("marketStatusList").innerHTML = tickers
+  marketStatusList.innerHTML = tickers
     .slice(3)
     .map(([symbol, price, change]) => {
       const cls = change >= 0 ? "positive" : "negative";
@@ -115,17 +115,17 @@ function loadMovers() {
   const gainers = tickers.filter(t => t[2] > 0).slice(0, 3);
   const losers = tickers.filter(t => t[2] < 0).slice(0, 3);
 
-  document.getElementById("gainersList").innerHTML = gainers
+  gainersList.innerHTML = gainers
     .map(t => `<div class="mover-row"><span>${t[0]}</span><span class="positive">${percent(t[2])}</span></div>`)
     .join("");
 
-  document.getElementById("losersList").innerHTML = losers
+  losersList.innerHTML = losers
     .map(t => `<div class="mover-row"><span>${t[0]}</span><span class="negative">${percent(t[2])}</span></div>`)
     .join("");
 }
 
 function loadPositions() {
-  document.getElementById("positionsTable").innerHTML = positions
+  positionsTable.innerHTML = positions
     .map(([ticker, shares, avg, current]) => {
       const value = shares * current;
       const cost = shares * avg;
@@ -149,7 +149,7 @@ function loadPositions() {
 }
 
 function loadOptions() {
-  document.getElementById("optionsTable").innerHTML = options
+  optionsTable.innerHTML = options
     .map(([ticker, type, strike, exp, avg, current]) => {
       const pl = (current - avg) * 100;
       const cls = pl >= 0 ? "positive" : "negative";
@@ -172,7 +172,7 @@ function loadOptions() {
 function loadPendingTrade() {
   const trade = pendingTrades[currentPendingIndex];
 
-  document.getElementById("pendingTrade").innerHTML = `
+  pendingTrade.innerHTML = `
     <h3>${trade.action} ${trade.ticker}</h3>
     <p>Type: ${trade.type}</p>
     <p>Strike: ${trade.strike}</p>
@@ -205,7 +205,7 @@ function nextPendingTrade() {
 }
 
 function loadRiskBox() {
-  document.getElementById("riskBox").innerHTML = `
+  riskBox.innerHTML = `
     <p>Open contracts: ${options.length}</p>
     <p>Highest risk: Short expiration calls</p>
     <p>Suggested max risk per trade: 1% - 3%</p>
@@ -214,7 +214,7 @@ function loadRiskBox() {
 }
 
 function loadWatchlist() {
-  document.getElementById("watchlistGrid").innerHTML = tickers
+  watchlistGrid.innerHTML = tickers
     .map(([symbol, price, change]) => {
       const cls = change >= 0 ? "positive" : "negative";
 
@@ -237,7 +237,7 @@ function statusIcon(status) {
 }
 
 function loadActivity() {
-  document.getElementById("activityLog").innerHTML = activity
+  activityLog.innerHTML = activity
     .map((item, index) => {
       const [type, name, amount, status] = item;
       const cls = amount.includes("+") ? "positive" : amount.includes("-") ? "negative" : "";
@@ -255,7 +255,7 @@ function loadActivity() {
 }
 
 function loadRecentActivity() {
-  document.getElementById("recentActivity").innerHTML = activity
+  recentActivity.innerHTML = activity
     .slice(0, 4)
     .map(([type, name, amount, status]) => {
       const cls = amount.includes("+") ? "positive" : amount.includes("-") ? "negative" : "";
@@ -309,13 +309,14 @@ function drawPortfolioChart() {
 async function checkBackend() {
   try {
     const response = await fetch(BACKEND_URL);
+
     if (response.ok) {
-      document.getElementById("backendStatus").textContent = "🟢 Backend Connected";
+      backendStatus.textContent = "🟢 Backend Connected";
     } else {
-      document.getElementById("backendStatus").textContent = "🟡 Backend Found";
+      backendStatus.textContent = "🟡 Backend Found";
     }
   } catch {
-    document.getElementById("backendStatus").textContent = "🔴 Backend Offline";
+    backendStatus.textContent = "🔴 Backend Offline";
   }
 }
 
@@ -329,14 +330,14 @@ function setupNavigation() {
       document.getElementById(button.dataset.page).classList.add("active");
 
       if (button.dataset.page === "overview") {
-        drawPortfolioChart();
+        setTimeout(drawPortfolioChart, 100);
       }
     });
   });
 }
 
-document.getElementById("approveBtn").addEventListener("click", approveTrade);
-document.getElementById("rejectBtn").addEventListener("click", rejectTrade);
+approveBtn.addEventListener("click", approveTrade);
+rejectBtn.addEventListener("click", rejectTrade);
 
 loadOverview();
 loadTickerBar();
