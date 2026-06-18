@@ -10,6 +10,13 @@ const portfolio = {
   totalReturn: 7241.87,
 };
 
+const aiAlertRules = {
+  breakoutPercentOneHour: 4,
+  minVolumeSpike: 1.5,
+  minOptionsVolume: 500,
+  alertCooldownMinutes: 30,
+};
+
 const tickers = [
   ["TSLA", 242.17, -2.15],
   ["NVDA", 875.39, 2.63],
@@ -60,6 +67,22 @@ let activity = JSON.parse(localStorage.getItem("activityLog")) || [
   ["SELL", "TSLA", "+$1,277.10", "COMPLETED"],
 ];
 
+let aiAlerts = JSON.parse(localStorage.getItem("aiAlerts")) || [
+  {
+    ticker: "TSLA",
+    direction: "Bullish",
+    contract: "TSLA 6/21 $250 CALL",
+    strike: "$250",
+    avg: "$1.35",
+    breakeven: "$251.35",
+    stockMove: "+4.21% in 1 hour",
+    callVolume: "18,420",
+    openInterest: "6,300",
+    volumeOi: "2.9x",
+    reason: "Breakout above hourly resistance with unusual call volume.",
+  },
+];
+
 function money(num) {
   return num.toLocaleString("en-US", {
     style: "currency",
@@ -73,6 +96,72 @@ function percent(num) {
 
 function saveActivity() {
   localStorage.setItem("activityLog", JSON.stringify(activity));
+}
+
+function saveAiAlerts() {
+  localStorage.setItem("aiAlerts", JSON.stringify(aiAlerts));
+}
+
+function enableNotifications() {
+  if ("Notification" in window) {
+    Notification.requestPermission();
+  }
+}
+
+function sendTradeAlert(alert) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(`AI Trade Alert: ${alert.ticker}`, {
+      body: `${alert.contract} | Avg ${alert.avg} | Move ${alert.stockMove}`,
+    });
+  }
+}
+
+function loadAiAlerts() {
+  const box = document.getElementById("aiAlerts");
+  if (!box) return;
+
+  if (aiAlerts.length === 0) {
+    box.innerHTML = `<p>No AI alerts detected.</p>`;
+    return;
+  }
+
+  box.innerHTML = aiAlerts
+    .map(alert => {
+      return `
+        <div class="activity-row">
+          <span>
+            <b class="positive">AI ALERT: ${alert.ticker}</b><br>
+            ${alert.direction} — ${alert.contract}<br>
+            Strike: ${alert.strike} | Avg: ${alert.avg} | Breakeven: ${alert.breakeven}<br>
+            Move: ${alert.stockMove}<br>
+            Call Volume: ${alert.callVolume} | OI: ${alert.openInterest} | Vol/OI: ${alert.volumeOi}<br>
+            <small>${alert.reason}</small>
+          </span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function testAiAlert() {
+  const alert = {
+    ticker: "NVDA",
+    direction: "Bullish",
+    contract: "NVDA 6/21 $900 CALL",
+    strike: "$900",
+    avg: "$2.45",
+    breakeven: "$902.45",
+    stockMove: "+4.08% in 1 hour",
+    callVolume: "12,880",
+    openInterest: "4,210",
+    volumeOi: "3.1x",
+    reason: "Stock triggered breakout rule with elevated call volume.",
+  };
+
+  aiAlerts.unshift(alert);
+  saveAiAlerts();
+  loadAiAlerts();
+  sendTradeAlert(alert);
 }
 
 function loadOverview() {
@@ -280,8 +369,9 @@ function deleteActivity(index) {
 
 function drawPortfolioChart() {
   const canvas = document.getElementById("portfolioChart");
-  const ctx = canvas.getContext("2d");
+  if (!canvas) return;
 
+  const ctx = canvas.getContext("2d");
   const data = [50000, 50600, 50250, 51400, 50900, 51800, 52341];
   const width = canvas.width = canvas.offsetWidth;
   const height = canvas.height = 130;
@@ -350,10 +440,10 @@ loadRiskBox();
 loadWatchlist();
 loadActivity();
 loadRecentActivity();
+loadAiAlerts();
 setupNavigation();
 drawPortfolioChart();
 checkBackend();
-
 
 
 
