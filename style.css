@@ -15,9 +15,7 @@ body {
   top: 0;
   width: 260px;
   height: 100vh;
-  background: #0b0f16;
-  border-right: 1px solid #202938;
-  padding: 34px 18px;
+  overflow-y: auto;
 }
 
 .sidebar h1 {
@@ -265,10 +263,12 @@ canvas {
     margin-top: 20px;
   }
 
-  .main {
-    margin-left: 0;
-  }
-
+.main {
+  margin-left: 260px;
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+  
   .grid,
   .overview-grid,
   .stats-row,
