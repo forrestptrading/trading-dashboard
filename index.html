@@ -36,6 +36,7 @@
       <div class="grid overview-grid">
         <div class="card portfolio-card">
           <p class="label">Total Value</p>
+
           <div class="big-row">
             <h3 id="totalValue"></h3>
             <span id="dailyChange"></span>
@@ -59,11 +60,13 @@
 
         <div class="card">
           <p class="label">Top Movers</p>
+
           <div class="movers">
             <div>
               <h4>Gainers</h4>
               <div id="gainersList"></div>
             </div>
+
             <div>
               <h4 class="negative">Losers</h4>
               <div id="losersList"></div>
@@ -75,44 +78,47 @@
           <p class="label">Recent Activity</p>
           <div id="recentActivity"></div>
         </div>
+
+        <div class="card">
+          <p class="label">Portfolio Analytics</p>
+          <div id="portfolioAnalytics"></div>
+        </div>
       </div>
     </section>
 
     <section class="page" id="positions">
-  <h2>Positions</h2>
-  <p class="subtitle">Stocks, Shares, Cost Basis & Profit/Loss</p>
+      <h2>Positions</h2>
+      <p class="subtitle">Stocks, Shares, Cost Basis & Profit/Loss</p>
 
-  <div class="card">
-    <p class="label">Add Holding</p>
+      <div class="card">
+        <p class="label">Add Holding</p>
 
-    <input id="holdingTicker" placeholder="Ticker">
-    <input id="holdingShares" type="number" placeholder="Shares">
-    <input id="holdingAvg" type="number" placeholder="Average Cost">
+        <input id="holdingTicker" placeholder="Ticker">
+        <input id="holdingShares" type="number" placeholder="Shares">
+        <input id="holdingAvg" type="number" placeholder="Average Cost">
 
-    <button id="addHoldingBtn" class="approve">
-      Add Holding
-    </button>
-  </div>
+        <button id="addHoldingBtn" class="approve">Add Holding</button>
+      </div>
 
-  <div class="card">
-    <table>
-      <thead>
-        <tr>
-          <th>Ticker</th>
-          <th>Shares</th>
-          <th>Avg Cost</th>
-          <th>Current</th>
-          <th>Market Value</th>
-          <th>P/L $</th>
-          <th>P/L %</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="positionsTable"></tbody>
-    </table>
-  </div>
-</section>
-    
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Shares</th>
+              <th>Avg Cost</th>
+              <th>Current</th>
+              <th>Market Value</th>
+              <th>P/L $</th>
+              <th>P/L %</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="positionsTable"></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="page" id="options">
       <h2>Options</h2>
       <p class="subtitle">Contracts, Risk & Approval Flow</p>
@@ -120,6 +126,7 @@
       <div class="grid">
         <div class="card">
           <p class="label">Options Tracker</p>
+
           <table>
             <thead>
               <tr>
@@ -139,6 +146,7 @@
         <div class="card">
           <p class="label">Pending Trade Approval</p>
           <div id="pendingTrade"></div>
+
           <button id="approveBtn" class="approve">Approve</button>
           <button id="rejectBtn" class="reject">Reject</button>
         </div>
@@ -153,6 +161,7 @@
     <section class="page" id="watchlist">
       <h2>Watchlist</h2>
       <p class="subtitle">Tracked Market Symbols</p>
+
       <div class="card">
         <div id="watchlistGrid" class="watchlist-grid"></div>
       </div>
@@ -161,6 +170,7 @@
     <section class="page" id="activity">
       <h2>Activity</h2>
       <p class="subtitle">Trade Journal & Account History</p>
+
       <div class="card">
         <div id="activityLog"></div>
       </div>
@@ -173,35 +183,35 @@
       <div class="grid">
         <div class="card">
           <p class="label">Robinhood Connection</p>
-          <p>🔴 Robinhood Not Authenticated</p>
+          <p>🟢 Live Quotes Connected</p>
           <p class="muted">Backend URL:</p>
           <code>https://trade-dashboard-api--forrestpbusines.replit.app</code>
         </div>
 
         <div class="card">
           <p class="label">AI Trade Assistant</p>
-          <p>Waiting for live portfolio data before giving trade analysis.</p>
+          <p>Waiting for live portfolio data before giving full trade analysis.</p>
         </div>
-      <div class="card">
-  <p class="label">AI Trade Alerts</p>
 
-  <button onclick="enableNotifications()" class="approve">
-    Enable Notifications
-  </button>
+        <div class="card">
+          <p class="label">AI Trade Alerts</p>
 
-  <button onclick="testAiAlert()" class="approve">
-    Test Alert
-  </button>
+          <button onclick="enableNotifications()" class="approve">
+            Enable Notifications
+          </button>
 
-  <div id="aiAlerts"></div>
-</div>
+          <button onclick="testAiAlert()" class="approve">
+            Test Alert
+          </button>
+
+          <div id="aiAlerts"></div>
+        </div>
       </div>
     </section>
   </main>
 
-  <script src="./script.js?v=14"></script>
+  <script src="./script.js?v=15"></script>
 </body>
 </html>
-
 
 
