@@ -31,7 +31,7 @@
 
     <section class="page active" id="overview">
       <h2>Overview</h2>
-      <p class="subtitle">Portfolio Summary, Market Status & Analytics</p>
+      <p class="subtitle">Portfolio Summary, Analytics & Trading Performance</p>
 
       <div class="grid overview-grid">
         <div class="card portfolio-card">
@@ -49,6 +49,16 @@
           </div>
 
           <canvas id="portfolioChart"></canvas>
+        </div>
+
+        <div class="card">
+          <p class="label">Portfolio Goal</p>
+          <div id="goalBox"></div>
+        </div>
+
+        <div class="card">
+          <p class="label">Trade Performance</p>
+          <div id="tradePerformanceBox"></div>
         </div>
 
         <div class="card">
@@ -89,6 +99,11 @@
         <div class="card">
           <p class="label">Options Expiration Tracker</p>
           <div id="expirationBox"></div>
+        </div>
+
+        <div class="card">
+          <p class="label">AI Trade Score</p>
+          <div id="aiScoreBox"></div>
         </div>
 
         <div class="card">
@@ -176,15 +191,37 @@
 
     <section class="page" id="activity">
       <h2>Activity</h2>
-      <p class="subtitle">Trade Journal & Account History</p>
-      <div class="card">
-        <div id="activityLog"></div>
+      <p class="subtitle">Trade Journal, Manual Trade Entry & Account History</p>
+
+      <div class="grid">
+        <div class="card">
+          <p class="label">Add Completed Trade</p>
+
+          <input id="tradeTicker" placeholder="Ticker">
+          <input id="tradeEntry" type="number" placeholder="Entry Price">
+          <input id="tradeExit" type="number" placeholder="Exit Price">
+          <input id="tradeShares" type="number" placeholder="Shares / Contracts">
+          <input id="tradeStrategy" placeholder="Strategy">
+          <input id="tradeNotes" placeholder="Notes">
+
+          <button id="saveTradeBtn" class="approve">Save Trade</button>
+        </div>
+
+        <div class="card">
+          <p class="label">Trade Journal</p>
+          <div id="tradeJournalBox"></div>
+        </div>
+
+        <div class="card">
+          <p class="label">Activity Log</p>
+          <div id="activityLog"></div>
+        </div>
       </div>
     </section>
 
     <section class="page" id="settings">
       <h2>Settings</h2>
-      <p class="subtitle">Connections & System Status</p>
+      <p class="subtitle">Connections, Goals & System Status</p>
 
       <div class="grid">
         <div class="card">
@@ -195,8 +232,14 @@
         </div>
 
         <div class="card">
+          <p class="label">Portfolio Goal Settings</p>
+          <input id="goalInput" type="number" placeholder="Portfolio Goal">
+          <button id="saveGoalBtn" class="approve">Save Goal</button>
+        </div>
+
+        <div class="card">
           <p class="label">AI Trade Assistant</p>
-          <p>Waiting for live portfolio data before giving full trade analysis.</p>
+          <p>Scores pending trades based on risk, position size, and option expiration.</p>
         </div>
 
         <div class="card">
@@ -209,11 +252,6 @@
     </section>
   </main>
 
-  <script src="./script.js?v=101"></script>
+  <script src="./script.js?v=102"></script>
 </body>
 </html>
-
-
-
-
-
