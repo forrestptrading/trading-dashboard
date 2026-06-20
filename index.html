@@ -79,27 +79,40 @@
     </section>
 
     <section class="page" id="positions">
-      <h2>Positions</h2>
-      <p class="subtitle">Stocks, Shares, Cost Basis & Profit/Loss</p>
+  <h2>Positions</h2>
+  <p class="subtitle">Stocks, Shares, Cost Basis & Profit/Loss</p>
 
-      <div class="card">
-        <table>
-          <thead>
-            <tr>
-              <th>Ticker</th>
-              <th>Shares</th>
-              <th>Avg Cost</th>
-              <th>Current</th>
-              <th>Market Value</th>
-              <th>P/L $</th>
-              <th>P/L %</th>
-            </tr>
-          </thead>
-          <tbody id="positionsTable"></tbody>
-        </table>
-      </div>
-    </section>
+  <div class="card">
+    <p class="label">Add Holding</p>
 
+    <input id="holdingTicker" placeholder="Ticker">
+    <input id="holdingShares" type="number" placeholder="Shares">
+    <input id="holdingAvg" type="number" placeholder="Average Cost">
+
+    <button id="addHoldingBtn" class="approve">
+      Add Holding
+    </button>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Shares</th>
+          <th>Avg Cost</th>
+          <th>Current</th>
+          <th>Market Value</th>
+          <th>P/L $</th>
+          <th>P/L %</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="positionsTable"></tbody>
+    </table>
+  </div>
+</section>
+    
     <section class="page" id="options">
       <h2>Options</h2>
       <p class="subtitle">Contracts, Risk & Approval Flow</p>
@@ -186,7 +199,7 @@
     </section>
   </main>
 
-  <script src="./script.js?v=11"></script>
+  <script src="./script.js?v=12"></script>
 </body>
 </html>
 
