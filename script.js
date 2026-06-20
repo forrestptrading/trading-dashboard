@@ -295,7 +295,28 @@ function addHolding() {
   sharesInput.value = "";
   avgInput.value = "";
 
-  fetchLiveQuotes();
+ async function fetchLiveQuotes() {
+  try {
+    const symbols = [...new Set([...WATCHLIST_SYMBOLS, ...holdings.map(h => h.ticker)])].join(",");
+    const response = await fetch(`${BACKEND_URL}/api/quotes?symbols=${symbols}`);
+    const data = await response.json();
+
+    if (Array.isArray(data.data)) {
+      liveQuotes = {};
+      data.data.forEach(q => {
+        liveQuotes[q.symbol] = q;
+      });
+    }
+
+    const lastUpdated = $("lastUpdated");
+    if (lastUpdated) {
+      lastUpdated.textContent = `Last Updated: ${new Date().toLocaleTimeString()}`;
+    }
+
+    refreshDashboard();
+  } catch (error) {
+    console.log("Live quotes failed:", error);
+  }
 }
 
 function deleteHolding(index) {
