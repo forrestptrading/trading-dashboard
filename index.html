@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Terminal/01 Trading Dashboard</title>
-
   <link rel="stylesheet" href="./style.css?v=12" />
 </head>
 
@@ -22,6 +21,7 @@
     <div class="sidebar-bottom">
       <p>SYS STATUS <span>● ONLINE</span></p>
       <p id="backendStatus">Backend Checking...</p>
+      <p id="refreshStatus">Waiting for quotes...</p>
       <button class="signout-btn">Sign Out</button>
     </div>
   </aside>
@@ -31,12 +31,11 @@
 
     <section class="page active" id="overview">
       <h2>Overview</h2>
-      <p class="subtitle">Portfolio Summary & Market Status</p>
+      <p class="subtitle">Portfolio Summary, Market Status & Analytics</p>
 
       <div class="grid overview-grid">
         <div class="card portfolio-card">
           <p class="label">Total Value</p>
-
           <div class="big-row">
             <h3 id="totalValue"></h3>
             <span id="dailyChange"></span>
@@ -60,13 +59,11 @@
 
         <div class="card">
           <p class="label">Top Movers</p>
-
           <div class="movers">
             <div>
               <h4>Gainers</h4>
               <div id="gainersList"></div>
             </div>
-
             <div>
               <h4 class="negative">Losers</h4>
               <div id="losersList"></div>
@@ -75,13 +72,28 @@
         </div>
 
         <div class="card">
-          <p class="label">Recent Activity</p>
-          <div id="recentActivity"></div>
+          <p class="label">Portfolio Analytics</p>
+          <div id="portfolioAnalytics"></div>
         </div>
 
         <div class="card">
-          <p class="label">Portfolio Analytics</p>
-          <div id="portfolioAnalytics"></div>
+          <p class="label">Position Allocation</p>
+          <div id="allocationBox"></div>
+        </div>
+
+        <div class="card">
+          <p class="label">Performance Leaderboard</p>
+          <div id="leaderboardBox"></div>
+        </div>
+
+        <div class="card">
+          <p class="label">Options Expiration Tracker</p>
+          <div id="expirationBox"></div>
+        </div>
+
+        <div class="card">
+          <p class="label">Recent Activity</p>
+          <div id="recentActivity"></div>
         </div>
       </div>
     </section>
@@ -92,11 +104,9 @@
 
       <div class="card">
         <p class="label">Add Holding</p>
-
         <input id="holdingTicker" placeholder="Ticker">
         <input id="holdingShares" type="number" placeholder="Shares">
         <input id="holdingAvg" type="number" placeholder="Average Cost">
-
         <button id="addHoldingBtn" class="approve">Add Holding</button>
       </div>
 
@@ -126,7 +136,6 @@
       <div class="grid">
         <div class="card">
           <p class="label">Options Tracker</p>
-
           <table>
             <thead>
               <tr>
@@ -146,7 +155,6 @@
         <div class="card">
           <p class="label">Pending Trade Approval</p>
           <div id="pendingTrade"></div>
-
           <button id="approveBtn" class="approve">Approve</button>
           <button id="rejectBtn" class="reject">Reject</button>
         </div>
@@ -161,7 +169,6 @@
     <section class="page" id="watchlist">
       <h2>Watchlist</h2>
       <p class="subtitle">Tracked Market Symbols</p>
-
       <div class="card">
         <div id="watchlistGrid" class="watchlist-grid"></div>
       </div>
@@ -170,7 +177,6 @@
     <section class="page" id="activity">
       <h2>Activity</h2>
       <p class="subtitle">Trade Journal & Account History</p>
-
       <div class="card">
         <div id="activityLog"></div>
       </div>
@@ -195,23 +201,19 @@
 
         <div class="card">
           <p class="label">AI Trade Alerts</p>
-
-          <button onclick="enableNotifications()" class="approve">
-            Enable Notifications
-          </button>
-
-          <button onclick="testAiAlert()" class="approve">
-            Test Alert
-          </button>
-
+          <button onclick="enableNotifications()" class="approve">Enable Notifications</button>
+          <button onclick="testAiAlert()" class="approve">Test Alert</button>
           <div id="aiAlerts"></div>
         </div>
       </div>
     </section>
   </main>
 
-  <script src="./script.js?v=100"></script>
+  <script src="./script.js?v=101"></script>
 </body>
 </html>
+
+
+
 
 
