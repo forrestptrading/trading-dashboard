@@ -19,22 +19,8 @@ let options = JSON.parse(localStorage.getItem("options")) || [
 ];
 
 let pendingTrades = [
-  {
-    action: "BUY",
-    ticker: "NVDA",
-    type: "CALL",
-    strike: "900",
-    exp: "6/21",
-    cost: "$245.00",
-  },
-  {
-    action: "SELL",
-    ticker: "TSLA",
-    type: "SHARES",
-    strike: "-",
-    exp: "-",
-    cost: "$1,277.10",
-  },
+  { action: "BUY", ticker: "NVDA", type: "CALL", strike: "900", exp: "6/21", cost: "$245.00" },
+  { action: "SELL", ticker: "TSLA", type: "SHARES", strike: "-", exp: "-", cost: "$1,277.10" },
 ];
 
 let activity = JSON.parse(localStorage.getItem("activityLog")) || [
@@ -44,21 +30,7 @@ let activity = JSON.parse(localStorage.getItem("activityLog")) || [
   ["SELL", "TSLA", "+$1,277.10", "COMPLETED"],
 ];
 
-let aiAlerts = JSON.parse(localStorage.getItem("aiAlerts")) || [
-  {
-    ticker: "TSLA",
-    direction: "Bullish",
-    contract: "TSLA 6/21 $250 CALL",
-    strike: "$250",
-    avg: "$1.35",
-    breakeven: "$251.35",
-    stockMove: "+4.21% in 1 hour",
-    callVolume: "18,420",
-    openInterest: "6,300",
-    volumeOi: "2.9x",
-    reason: "Breakout above hourly resistance with unusual call volume.",
-  },
-];
+let aiAlerts = JSON.parse(localStorage.getItem("aiAlerts")) || [];
 
 function $(id) {
   return document.getElementById(id);
@@ -72,7 +44,7 @@ function money(num) {
 }
 
 function percent(num) {
-  return `${num >= 0 ? "+" : ""}${Number(num || 0).toFixed(2)}%`;
+  return `${Number(num || 0) >= 0 ? "+" : ""}${Number(num || 0).toFixed(2)}%`;
 }
 
 function saveHoldings() {
@@ -92,13 +64,18 @@ function getQuote(symbol) {
 }
 
 function getLivePrice(symbol, fallback = 0) {
-  const quote = getQuote(symbol);
-  return quote?.price || quote?.last || fallback;
+  const q = getQuote(symbol);
+  return q ? Number(q.price || q.last || q.current || fallback) : fallback;
 }
 
 function getLiveChange(symbol) {
-  const quote = getQuote(symbol);
-  return quote?.percentChange || quote?.changePercent || quote?.change_percent || 0;
+  const q = getQuote(symbol);
+  return q ? Number(q.changePercent || q.percentChange || q.change_percent || 0) : 0;
+}
+
+function getDollarChange(symbol) {
+  const q = getQuote(symbol);
+  return q ? Number(q.change || q.priceChange || 0) : 0;
 }
 
 async function fetchLiveQuotes() {
@@ -107,40 +84,44 @@ async function fetchLiveQuotes() {
     const response = await fetch(`${BACKEND_URL}/api/quotes?symbols=${symbols}`);
     const data = await response.json();
 
-    if (data.quotes) {
-      liveQuotes = data.quotes;
-    } else if (data.data) {
-      liveQuotes = data.data;
+    liveQuotes = {};
+
+    if (Array.isArray(data.data)) {
+      data.data.forEach(q => {
+        liveQuotes[q.symbol] = q;
+      });
     }
 
-    const lastUpdated = $("lastUpdated");
-    if (lastUpdated) {
-      lastUpdated.textContent = `Last Updated: ${new Date().toLocaleTimeString()}`;
+    if (Array.isArray(data.quotes)) {
+      data.quotes.forEach(q => {
+        liveQuotes[q.symbol] = q;
+      });
+    }
+
+    if (data.quotes && !Array.isArray(data.quotes)) {
+      liveQuotes = data.quotes;
     }
 
     refreshDashboard();
   } catch (error) {
     console.log("Live quotes failed:", error);
+    refreshDashboard();
   }
 }
 
 function calculatePortfolio() {
   let invested = 0;
   let totalValue = 0;
+  let dailyChange = 0;
 
   holdings.forEach(h => {
     const current = getLivePrice(h.ticker, h.avgCost);
     invested += h.shares * h.avgCost;
     totalValue += h.shares * current;
+    dailyChange += getDollarChange(h.ticker) * h.shares;
   });
 
   const totalReturn = totalValue - invested;
-  const dailyChange = holdings.reduce((sum, h) => {
-    const quote = getQuote(h.ticker);
-    const change = quote?.change || quote?.priceChange || 0;
-    return sum + change * h.shares;
-  }, 0);
-
   const dailyPercent = totalValue > 0 ? (dailyChange / totalValue) * 100 : 0;
 
   return {
@@ -155,59 +136,40 @@ function calculatePortfolio() {
 }
 
 function loadOverview() {
-  const portfolio = calculatePortfolio();
+  const p = calculatePortfolio();
 
-  if ($("totalValue")) $("totalValue").textContent = money(portfolio.totalValue);
+  if ($("totalValue")) $("totalValue").textContent = money(p.totalValue);
+
   if ($("dailyChange")) {
-    $("dailyChange").textContent = `${money(portfolio.dailyChange)} (${percent(portfolio.dailyPercent)})`;
-    $("dailyChange").className = portfolio.dailyChange >= 0 ? "positive" : "negative";
+    $("dailyChange").textContent = `${money(p.dailyChange)} (${percent(p.dailyPercent)})`;
+    $("dailyChange").className = p.dailyChange >= 0 ? "positive" : "negative";
   }
-  if ($("cashValue")) $("cashValue").textContent = money(portfolio.cash);
-  if ($("investedValue")) $("investedValue").textContent = money(portfolio.invested);
-  if ($("buyingPower")) $("buyingPower").textContent = money(portfolio.buyingPower);
+
+  if ($("cashValue")) $("cashValue").textContent = money(p.cash);
+  if ($("investedValue")) $("investedValue").textContent = money(p.invested);
+  if ($("buyingPower")) $("buyingPower").textContent = money(p.buyingPower);
+
   if ($("totalReturn")) {
-    $("totalReturn").textContent = money(portfolio.totalReturn);
-    $("totalReturn").className = portfolio.totalReturn >= 0 ? "positive" : "negative";
+    $("totalReturn").textContent = money(p.totalReturn);
+    $("totalReturn").className = p.totalReturn >= 0 ? "positive" : "negative";
   }
 }
 
 function loadTickerBar() {
-  const tickerBar = $("tickerBar");
-  if (!tickerBar) return;
+  if (!$("tickerBar")) return;
 
-  tickerBar.innerHTML = WATCHLIST_SYMBOLS.map(symbol => {
+  $("tickerBar").innerHTML = WATCHLIST_SYMBOLS.map(symbol => {
     const price = getLivePrice(symbol, 0);
     const change = getLiveChange(symbol);
     const cls = change >= 0 ? "positive" : "negative";
-
     return `<span>${symbol} ${money(price)} <b class="${cls}">${percent(change)}</b></span>`;
   }).join("");
 }
 
-function loadWatchlist() {
-  const watchlistGrid = $("watchlistGrid");
-  if (!watchlistGrid) return;
-
-  watchlistGrid.innerHTML = WATCHLIST_SYMBOLS.map(symbol => {
-    const price = getLivePrice(symbol, 0);
-    const change = getLiveChange(symbol);
-    const cls = change >= 0 ? "positive" : "negative";
-
-    return `
-      <div class="watch-card">
-        <strong>${symbol}</strong>
-        <span>${money(price)}</span>
-        <span class="${cls}">${percent(change)}</span>
-      </div>
-    `;
-  }).join("");
-}
-
 function loadMarketStatus() {
-  const marketStatusList = $("marketStatusList");
-  if (!marketStatusList) return;
+  if (!$("marketStatusList")) return;
 
-  marketStatusList.innerHTML = WATCHLIST_SYMBOLS.slice(0, 5).map(symbol => {
+  $("marketStatusList").innerHTML = WATCHLIST_SYMBOLS.slice(0, 5).map(symbol => {
     const price = getLivePrice(symbol, 0);
     const change = getLiveChange(symbol);
     const cls = change >= 0 ? "positive" : "negative";
@@ -223,33 +185,48 @@ function loadMarketStatus() {
 }
 
 function loadMovers() {
-  const gainersList = $("gainersList");
-  const losersList = $("losersList");
-  if (!gainersList || !losersList) return;
+  if (!$("gainersList") || !$("losersList")) return;
 
   const sorted = WATCHLIST_SYMBOLS.map(symbol => ({
     symbol,
     change: getLiveChange(symbol),
   })).sort((a, b) => b.change - a.change);
 
-  gainersList.innerHTML = sorted
+  $("gainersList").innerHTML = sorted
     .filter(x => x.change >= 0)
     .slice(0, 3)
     .map(x => `<div class="mover-row"><span>${x.symbol}</span><span class="positive">${percent(x.change)}</span></div>`)
     .join("");
 
-  losersList.innerHTML = sorted
+  $("losersList").innerHTML = sorted
     .filter(x => x.change < 0)
     .slice(0, 3)
     .map(x => `<div class="mover-row"><span>${x.symbol}</span><span class="negative">${percent(x.change)}</span></div>`)
     .join("");
 }
 
-function loadPositions() {
-  const positionsTable = $("positionsTable");
-  if (!positionsTable) return;
+function loadWatchlist() {
+  if (!$("watchlistGrid")) return;
 
-  positionsTable.innerHTML = holdings.map((h, index) => {
+  $("watchlistGrid").innerHTML = WATCHLIST_SYMBOLS.map(symbol => {
+    const price = getLivePrice(symbol, 0);
+    const change = getLiveChange(symbol);
+    const cls = change >= 0 ? "positive" : "negative";
+
+    return `
+      <div class="watch-card">
+        <strong>${symbol}</strong>
+        <span>${money(price)}</span>
+        <span class="${cls}">${percent(change)}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+function loadPositions() {
+  if (!$("positionsTable")) return;
+
+  $("positionsTable").innerHTML = holdings.map((h, index) => {
     const current = getLivePrice(h.ticker, h.avgCost);
     const value = h.shares * current;
     const cost = h.shares * h.avgCost;
@@ -273,15 +250,9 @@ function loadPositions() {
 }
 
 function addHolding() {
-  const tickerInput = $("holdingTicker");
-  const sharesInput = $("holdingShares");
-  const avgInput = $("holdingAvg");
-
-  if (!tickerInput || !sharesInput || !avgInput) return;
-
-  const ticker = tickerInput.value.trim().toUpperCase();
-  const shares = Number(sharesInput.value);
-  const avgCost = Number(avgInput.value);
+  const ticker = $("holdingTicker")?.value.trim().toUpperCase();
+  const shares = Number($("holdingShares")?.value);
+  const avgCost = Number($("holdingAvg")?.value);
 
   if (!ticker || shares <= 0 || avgCost <= 0) {
     alert("Enter ticker, shares, and average cost.");
@@ -291,32 +262,11 @@ function addHolding() {
   holdings.push({ ticker, shares, avgCost });
   saveHoldings();
 
-  tickerInput.value = "";
-  sharesInput.value = "";
-  avgInput.value = "";
+  $("holdingTicker").value = "";
+  $("holdingShares").value = "";
+  $("holdingAvg").value = "";
 
- async function fetchLiveQuotes() {
-  try {
-    const symbols = [...new Set([...WATCHLIST_SYMBOLS, ...holdings.map(h => h.ticker)])].join(",");
-    const response = await fetch(`${BACKEND_URL}/api/quotes?symbols=${symbols}`);
-    const data = await response.json();
-
-    if (Array.isArray(data.data)) {
-      liveQuotes = {};
-      data.data.forEach(q => {
-        liveQuotes[q.symbol] = q;
-      });
-    }
-
-    const lastUpdated = $("lastUpdated");
-    if (lastUpdated) {
-      lastUpdated.textContent = `Last Updated: ${new Date().toLocaleTimeString()}`;
-    }
-
-    refreshDashboard();
-  } catch (error) {
-    console.log("Live quotes failed:", error);
-  }
+  fetchLiveQuotes();
 }
 
 function deleteHolding(index) {
@@ -326,10 +276,9 @@ function deleteHolding(index) {
 }
 
 function loadOptions() {
-  const optionsTable = $("optionsTable");
-  if (!optionsTable) return;
+  if (!$("optionsTable")) return;
 
-  optionsTable.innerHTML = options.map(([ticker, type, strike, exp, avg, current]) => {
+  $("optionsTable").innerHTML = options.map(([ticker, type, strike, exp, avg, current]) => {
     const pl = (current - avg) * 100;
     const cls = pl >= 0 ? "positive" : "negative";
 
@@ -348,12 +297,11 @@ function loadOptions() {
 }
 
 function loadPendingTrade() {
-  const pendingTrade = $("pendingTrade");
-  if (!pendingTrade) return;
+  if (!$("pendingTrade")) return;
 
   const trade = pendingTrades[currentPendingIndex];
 
-  pendingTrade.innerHTML = `
+  $("pendingTrade").innerHTML = `
     <h3>${trade.action} ${trade.ticker}</h3>
     <p>Type: ${trade.type}</p>
     <p>Strike: ${trade.strike}</p>
@@ -386,10 +334,9 @@ function nextPendingTrade() {
 }
 
 function loadRiskBox() {
-  const riskBox = $("riskBox");
-  if (!riskBox) return;
+  if (!$("riskBox")) return;
 
-  riskBox.innerHTML = `
+  $("riskBox").innerHTML = `
     <p>Open contracts: ${options.length}</p>
     <p>Open stock holdings: ${holdings.length}</p>
     <p>Highest risk: Short expiration options</p>
@@ -406,10 +353,9 @@ function statusIcon(status) {
 }
 
 function loadActivity() {
-  const activityLog = $("activityLog");
-  if (!activityLog) return;
+  if (!$("activityLog")) return;
 
-  activityLog.innerHTML = activity.map((item, index) => {
+  $("activityLog").innerHTML = activity.map((item, index) => {
     const [type, name, amount, status] = item;
     const cls = amount.includes("+") ? "positive" : amount.includes("-") ? "negative" : "";
 
@@ -425,10 +371,9 @@ function loadActivity() {
 }
 
 function loadRecentActivity() {
-  const recentActivity = $("recentActivity");
-  if (!recentActivity) return;
+  if (!$("recentActivity")) return;
 
-  recentActivity.innerHTML = activity.slice(0, 4).map(([type, name, amount, status]) => {
+  $("recentActivity").innerHTML = activity.slice(0, 4).map(([type, name, amount, status]) => {
     const cls = amount.includes("+") ? "positive" : amount.includes("-") ? "negative" : "";
 
     return `
@@ -463,28 +408,25 @@ function sendTradeAlert(alert) {
 }
 
 function loadAiAlerts() {
-  const box = $("aiAlerts");
-  if (!box) return;
+  if (!$("aiAlerts")) return;
 
   if (aiAlerts.length === 0) {
-    box.innerHTML = `<p>No AI alerts detected.</p>`;
+    $("aiAlerts").innerHTML = `<p>No AI alerts detected.</p>`;
     return;
   }
 
-  box.innerHTML = aiAlerts.map(alert => {
-    return `
-      <div class="activity-row">
-        <span>
-          <b class="positive">AI ALERT: ${alert.ticker}</b><br>
-          ${alert.direction} — ${alert.contract}<br>
-          Strike: ${alert.strike} | Avg: ${alert.avg} | Breakeven: ${alert.breakeven}<br>
-          Move: ${alert.stockMove}<br>
-          Call Volume: ${alert.callVolume} | OI: ${alert.openInterest} | Vol/OI: ${alert.volumeOi}<br>
-          <small>${alert.reason}</small>
-        </span>
-      </div>
-    `;
-  }).join("");
+  $("aiAlerts").innerHTML = aiAlerts.map(alert => `
+    <div class="activity-row">
+      <span>
+        <b class="positive">AI ALERT: ${alert.ticker}</b><br>
+        ${alert.direction} — ${alert.contract}<br>
+        Strike: ${alert.strike} | Avg: ${alert.avg} | Breakeven: ${alert.breakeven}<br>
+        Move: ${alert.stockMove}<br>
+        Call Volume: ${alert.callVolume} | OI: ${alert.openInterest} | Vol/OI: ${alert.volumeOi}<br>
+        <small>${alert.reason}</small>
+      </span>
+    </div>
+  `).join("");
 }
 
 function testAiAlert() {
@@ -513,9 +455,11 @@ function drawPortfolioChart() {
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
-  const portfolio = calculatePortfolio();
-  const base = portfolio.invested || 10000;
-  const end = portfolio.totalValue || base;
+  const p = calculatePortfolio();
+
+  const base = p.invested || 10000;
+  const end = p.totalValue || base;
+
   const data = [
     base * 0.97,
     base * 0.985,
@@ -551,19 +495,13 @@ function drawPortfolioChart() {
 }
 
 async function checkBackend() {
-  const backendStatus = $("backendStatus");
-  if (!backendStatus) return;
+  if (!$("backendStatus")) return;
 
   try {
     const response = await fetch(BACKEND_URL);
-
-    if (response.ok) {
-      backendStatus.textContent = "🟢 Backend Connected";
-    } else {
-      backendStatus.textContent = "🟡 Backend Found";
-    }
+    $("backendStatus").textContent = response.ok ? "🟢 Backend Connected" : "🟡 Backend Found";
   } catch {
-    backendStatus.textContent = "🔴 Backend Offline";
+    $("backendStatus").textContent = "🔴 Backend Offline";
   }
 }
 
@@ -586,13 +524,9 @@ function setupNavigation() {
 }
 
 function setupButtons() {
-  const approveBtn = $("approveBtn");
-  const rejectBtn = $("rejectBtn");
-  const addHoldingBtn = $("addHoldingBtn");
-
-  if (approveBtn) approveBtn.addEventListener("click", approveTrade);
-  if (rejectBtn) rejectBtn.addEventListener("click", rejectTrade);
-  if (addHoldingBtn) addHoldingBtn.addEventListener("click", addHolding);
+  if ($("approveBtn")) $("approveBtn").addEventListener("click", approveTrade);
+  if ($("rejectBtn")) $("rejectBtn").addEventListener("click", rejectTrade);
+  if ($("addHoldingBtn")) $("addHoldingBtn").addEventListener("click", addHolding);
 }
 
 function refreshDashboard() {
@@ -600,24 +534,26 @@ function refreshDashboard() {
   loadTickerBar();
   loadMarketStatus();
   loadMovers();
+  loadWatchlist();
   loadPositions();
   loadOptions();
   loadPendingTrade();
   loadRiskBox();
-  loadWatchlist();
   loadActivity();
   loadRecentActivity();
   loadAiAlerts();
   drawPortfolioChart();
 }
 
-setupButtons();
-setupNavigation();
-refreshDashboard();
-checkBackend();
-fetchLiveQuotes();
+document.addEventListener("DOMContentLoaded", () => {
+  setupButtons();
+  setupNavigation();
+  refreshDashboard();
+  checkBackend();
+  fetchLiveQuotes();
+  setInterval(fetchLiveQuotes, 60000);
+});
 
-setInterval(fetchLiveQuotes, 60000);
 
 
 
