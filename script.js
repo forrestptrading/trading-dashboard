@@ -1,219 +1,625 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Terminal/01 Trading Dashboard</title>
+const BACKEND_URL = "https://trade-dashboard-api--forrestpbusines.replit.app";
 
-  <link rel="stylesheet" href="./style.css?v=12" />
-</head>
+const WATCHLIST_SYMBOLS = ["AAPL", "SPY", "TSLA", "NVDA", "QQQ", "IWM", "AGQ"];
 
-<body>
-  <aside class="sidebar">
-    <h1><span>TERMINAL</span>/01</h1>
+let liveQuotes = {};
+let currentPendingIndex = 0;
 
-    <button class="nav-btn active" data-page="overview">Overview</button>
-    <button class="nav-btn" data-page="positions">Positions</button>
-    <button class="nav-btn" data-page="options">Options</button>
-    <button class="nav-btn" data-page="watchlist">Watchlist</button>
-    <button class="nav-btn" data-page="activity">Activity</button>
-    <button class="nav-btn" data-page="settings">Settings</button>
+let holdings = JSON.parse(localStorage.getItem("holdings")) || [
+  { ticker: "AAPL", shares: 2, avgCost: 213.44 },
+  { ticker: "SPY", shares: 1, avgCost: 512.87 },
+  { ticker: "TSLA", shares: 2, avgCost: 242.17 },
+  { ticker: "NVDA", shares: 1, avgCost: 875.39 },
+];
 
-    <div class="sidebar-bottom">
-      <p>SYS STATUS <span>● ONLINE</span></p>
-      <p id="backendStatus">Backend Checking...</p>
-      <button class="signout-btn">Sign Out</button>
+let options = JSON.parse(localStorage.getItem("options")) || [
+  ["IWM", "CALL", "286", "6/19", 0.09, 0.14],
+  ["NVDA", "CALL", "232.5", "6/1", 0.14, 0.22],
+  ["SPCE", "CALL", "8", "6/18", 2.54, 3.35],
+];
+
+let pendingTrades = [
+  { action: "BUY", ticker: "NVDA", type: "CALL", strike: "900", exp: "6/21", cost: "$245.00" },
+  { action: "SELL", ticker: "TSLA", type: "SHARES", strike: "-", exp: "-", cost: "$1,277.10" },
+];
+
+let activity = JSON.parse(localStorage.getItem("activityLog")) || [
+  ["BUY", "MSFT", "-$2,044.55", "PENDING"],
+  ["WITHDRAWAL", "Bank of America ****1234", "$1,500.00", "PENDING"],
+  ["BUY", "NVDA", "-$3,328.56", "COMPLETED"],
+  ["SELL", "TSLA", "+$1,277.10", "COMPLETED"],
+];
+
+let aiAlerts = JSON.parse(localStorage.getItem("aiAlerts")) || [];
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function money(num) {
+  return Number(num || 0).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+}
+
+function percent(num) {
+  return `${Number(num || 0) >= 0 ? "+" : ""}${Number(num || 0).toFixed(2)}%`;
+}
+
+function saveHoldings() {
+  localStorage.setItem("holdings", JSON.stringify(holdings));
+}
+
+function saveActivity() {
+  localStorage.setItem("activityLog", JSON.stringify(activity));
+}
+
+function saveAiAlerts() {
+  localStorage.setItem("aiAlerts", JSON.stringify(aiAlerts));
+}
+
+function getQuote(symbol) {
+  return liveQuotes[symbol] || null;
+}
+
+function getLivePrice(symbol, fallback = 0) {
+  const q = getQuote(symbol);
+  return q ? Number(q.price || q.last || q.current || fallback) : fallback;
+}
+
+function getLiveChange(symbol) {
+  const q = getQuote(symbol);
+  return q ? Number(q.changePercent || q.percentChange || q.change_percent || 0) : 0;
+}
+
+function getDollarChange(symbol) {
+  const q = getQuote(symbol);
+  return q ? Number(q.change || q.priceChange || 0) : 0;
+}
+
+async function fetchLiveQuotes() {
+  try {
+    const symbols = [...new Set([...WATCHLIST_SYMBOLS, ...holdings.map(h => h.ticker)])].join(",");
+    const response = await fetch(`${BACKEND_URL}/api/quotes?symbols=${symbols}`);
+    const data = await response.json();
+
+    liveQuotes = {};
+
+    if (Array.isArray(data.data)) {
+      data.data.forEach(q => {
+        liveQuotes[q.symbol] = q;
+      });
+    }
+
+    if (Array.isArray(data.quotes)) {
+      data.quotes.forEach(q => {
+        liveQuotes[q.symbol] = q;
+      });
+    }
+
+    if (data.quotes && !Array.isArray(data.quotes)) {
+      liveQuotes = data.quotes;
+    }
+
+    refreshDashboard();
+  } catch (error) {
+    console.log("Live quotes failed:", error);
+    refreshDashboard();
+  }
+}
+
+function calculatePortfolio() {
+  let invested = 0;
+  let totalValue = 0;
+  let dailyChange = 0;
+
+  holdings.forEach(h => {
+    const current = getLivePrice(h.ticker, h.avgCost);
+    invested += h.shares * h.avgCost;
+    totalValue += h.shares * current;
+    dailyChange += getDollarChange(h.ticker) * h.shares;
+  });
+
+  const totalReturn = totalValue - invested;
+  const dailyPercent = totalValue > 0 ? (dailyChange / totalValue) * 100 : 0;
+
+  return {
+    totalValue,
+    invested,
+    cash: 3241.56,
+    buyingPower: 3241.56,
+    totalReturn,
+    dailyChange,
+    dailyPercent,
+  };
+}
+
+function loadOverview() {
+  const p = calculatePortfolio();
+
+  if ($("totalValue")) $("totalValue").textContent = money(p.totalValue);
+
+  if ($("dailyChange")) {
+    $("dailyChange").textContent = `${money(p.dailyChange)} (${percent(p.dailyPercent)})`;
+    $("dailyChange").className = p.dailyChange >= 0 ? "positive" : "negative";
+  }
+
+  if ($("cashValue")) $("cashValue").textContent = money(p.cash);
+  if ($("investedValue")) $("investedValue").textContent = money(p.invested);
+  if ($("buyingPower")) $("buyingPower").textContent = money(p.buyingPower);
+
+  if ($("totalReturn")) {
+    $("totalReturn").textContent = money(p.totalReturn);
+    $("totalReturn").className = p.totalReturn >= 0 ? "positive" : "negative";
+  }
+}
+
+function loadPortfolioAnalytics() {
+  const box = $("portfolioAnalytics");
+  if (!box) return;
+
+  if (holdings.length === 0) {
+    box.innerHTML = "<p>No holdings yet.</p>";
+    return;
+  }
+
+  const stats = holdings.map(h => {
+    const current = getLivePrice(h.ticker, h.avgCost);
+    const value = h.shares * current;
+    const cost = h.shares * h.avgCost;
+    const pl = value - cost;
+    const plPercent = cost > 0 ? (pl / cost) * 100 : 0;
+
+    return {
+      ticker: h.ticker,
+      value,
+      plPercent,
+    };
+  });
+
+  const largest = stats.reduce((a, b) => b.value > a.value ? b : a);
+  const best = stats.reduce((a, b) => b.plPercent > a.plPercent ? b : a);
+  const worst = stats.reduce((a, b) => b.plPercent < a.plPercent ? b : a);
+
+  const portfolio = calculatePortfolio();
+  const gainPercent = portfolio.invested > 0
+    ? (portfolio.totalReturn / portfolio.invested) * 100
+    : 0;
+
+  box.innerHTML = `
+    <div class="market-row">
+      <span>Total Holdings</span>
+      <span>${holdings.length}</span>
     </div>
-  </aside>
 
-  <main class="main">
-    <div class="ticker-bar" id="tickerBar"></div>
+    <div class="market-row">
+      <span>Largest Position</span>
+      <span>${largest.ticker}</span>
+    </div>
 
-    <section class="page active" id="overview">
-      <h2>Overview</h2>
-      <p class="subtitle">Portfolio Summary & Market Status</p>
+    <div class="market-row">
+      <span>Best Performer</span>
+      <span class="${best.plPercent >= 0 ? "positive" : "negative"}">
+        ${best.ticker} ${percent(best.plPercent)}
+      </span>
+    </div>
 
-      <div class="grid overview-grid">
-        <div class="card portfolio-card">
-          <p class="label">Total Value</p>
+    <div class="market-row">
+      <span>Worst Performer</span>
+      <span class="${worst.plPercent >= 0 ? "positive" : "negative"}">
+        ${worst.ticker} ${percent(worst.plPercent)}
+      </span>
+    </div>
 
-          <div class="big-row">
-            <h3 id="totalValue"></h3>
-            <span id="dailyChange"></span>
-          </div>
+    <div class="market-row">
+      <span>Portfolio Gain</span>
+      <span class="${gainPercent >= 0 ? "positive" : "negative"}">
+        ${percent(gainPercent)}
+      </span>
+    </div>
+  `;
+}
 
-          <div class="stats-row">
-            <div><p>Cash</p><strong id="cashValue"></strong></div>
-            <div><p>Invested</p><strong id="investedValue"></strong></div>
-            <div><p>Buying Power</p><strong id="buyingPower"></strong></div>
-            <div><p>Total Return</p><strong id="totalReturn"></strong></div>
-          </div>
+function loadTickerBar() {
+  if (!$("tickerBar")) return;
 
-          <canvas id="portfolioChart"></canvas>
-        </div>
+  $("tickerBar").innerHTML = WATCHLIST_SYMBOLS.map(symbol => {
+    const price = getLivePrice(symbol, 0);
+    const change = getLiveChange(symbol);
+    const cls = change >= 0 ? "positive" : "negative";
+    return `<span>${symbol} ${money(price)} <b class="${cls}">${percent(change)}</b></span>`;
+  }).join("");
+}
 
-        <div class="card">
-          <p class="label">Market Status</p>
-          <div class="market-open">OPEN <span>Markets open</span></div>
-          <div id="marketStatusList"></div>
-        </div>
+function loadMarketStatus() {
+  if (!$("marketStatusList")) return;
 
-        <div class="card">
-          <p class="label">Top Movers</p>
+  $("marketStatusList").innerHTML = WATCHLIST_SYMBOLS.slice(0, 5).map(symbol => {
+    const price = getLivePrice(symbol, 0);
+    const change = getLiveChange(symbol);
+    const cls = change >= 0 ? "positive" : "negative";
 
-          <div class="movers">
-            <div>
-              <h4>Gainers</h4>
-              <div id="gainersList"></div>
-            </div>
-
-            <div>
-              <h4 class="negative">Losers</h4>
-              <div id="losersList"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <p class="label">Recent Activity</p>
-          <div id="recentActivity"></div>
-        </div>
-
-        <div class="card">
-          <p class="label">Portfolio Analytics</p>
-          <div id="portfolioAnalytics"></div>
-        </div>
+    return `
+      <div class="market-row">
+        <span>${symbol}</span>
+        <span>${money(price)}</span>
+        <span class="${cls}">${percent(change)}</span>
       </div>
-    </section>
+    `;
+  }).join("");
+}
 
-    <section class="page" id="positions">
-      <h2>Positions</h2>
-      <p class="subtitle">Stocks, Shares, Cost Basis & Profit/Loss</p>
+function loadMovers() {
+  if (!$("gainersList") || !$("losersList")) return;
 
-      <div class="card">
-        <p class="label">Add Holding</p>
+  const sorted = WATCHLIST_SYMBOLS.map(symbol => ({
+    symbol,
+    change: getLiveChange(symbol),
+  })).sort((a, b) => b.change - a.change);
 
-        <input id="holdingTicker" placeholder="Ticker">
-        <input id="holdingShares" type="number" placeholder="Shares">
-        <input id="holdingAvg" type="number" placeholder="Average Cost">
+  $("gainersList").innerHTML = sorted
+    .filter(x => x.change >= 0)
+    .slice(0, 3)
+    .map(x => `<div class="mover-row"><span>${x.symbol}</span><span class="positive">${percent(x.change)}</span></div>`)
+    .join("");
 
-        <button id="addHoldingBtn" class="approve">Add Holding</button>
+  $("losersList").innerHTML = sorted
+    .filter(x => x.change < 0)
+    .slice(0, 3)
+    .map(x => `<div class="mover-row"><span>${x.symbol}</span><span class="negative">${percent(x.change)}</span></div>`)
+    .join("");
+}
+
+function loadWatchlist() {
+  if (!$("watchlistGrid")) return;
+
+  $("watchlistGrid").innerHTML = WATCHLIST_SYMBOLS.map(symbol => {
+    const price = getLivePrice(symbol, 0);
+    const change = getLiveChange(symbol);
+    const cls = change >= 0 ? "positive" : "negative";
+
+    return `
+      <div class="watch-card">
+        <strong>${symbol}</strong>
+        <span>${money(price)}</span>
+        <span class="${cls}">${percent(change)}</span>
       </div>
+    `;
+  }).join("");
+}
 
-      <div class="card">
-        <table>
-          <thead>
-            <tr>
-              <th>Ticker</th>
-              <th>Shares</th>
-              <th>Avg Cost</th>
-              <th>Current</th>
-              <th>Market Value</th>
-              <th>P/L $</th>
-              <th>P/L %</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="positionsTable"></tbody>
-        </table>
+function loadPositions() {
+  if (!$("positionsTable")) return;
+
+  $("positionsTable").innerHTML = holdings.map((h, index) => {
+    const current = getLivePrice(h.ticker, h.avgCost);
+    const value = h.shares * current;
+    const cost = h.shares * h.avgCost;
+    const pl = value - cost;
+    const plPercent = cost > 0 ? (pl / cost) * 100 : 0;
+    const cls = pl >= 0 ? "positive" : "negative";
+
+    return `
+      <tr>
+        <td>${h.ticker}</td>
+        <td>${h.shares}</td>
+        <td>${money(h.avgCost)}</td>
+        <td>${money(current)}</td>
+        <td>${money(value)}</td>
+        <td class="${cls}">${money(pl)}</td>
+        <td class="${cls}">${percent(plPercent)}</td>
+        <td><button class="reject" onclick="deleteHolding(${index})">Delete</button></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function addHolding() {
+  const ticker = $("holdingTicker")?.value.trim().toUpperCase();
+  const shares = Number($("holdingShares")?.value);
+  const avgCost = Number($("holdingAvg")?.value);
+
+  if (!ticker || shares <= 0 || avgCost <= 0) {
+    alert("Enter ticker, shares, and average cost.");
+    return;
+  }
+
+  holdings.push({ ticker, shares, avgCost });
+  saveHoldings();
+
+  $("holdingTicker").value = "";
+  $("holdingShares").value = "";
+  $("holdingAvg").value = "";
+
+  fetchLiveQuotes();
+}
+
+function deleteHolding(index) {
+  holdings.splice(index, 1);
+  saveHoldings();
+  refreshDashboard();
+}
+
+function loadOptions() {
+  if (!$("optionsTable")) return;
+
+  $("optionsTable").innerHTML = options.map(([ticker, type, strike, exp, avg, current]) => {
+    const pl = (current - avg) * 100;
+    const cls = pl >= 0 ? "positive" : "negative";
+
+    return `
+      <tr>
+        <td>${ticker}</td>
+        <td>${type}</td>
+        <td>${strike}</td>
+        <td>${exp}</td>
+        <td>$${avg.toFixed(2)}</td>
+        <td>$${current.toFixed(2)}</td>
+        <td class="${cls}">${money(pl)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function loadPendingTrade() {
+  if (!$("pendingTrade")) return;
+
+  const trade = pendingTrades[currentPendingIndex];
+
+  $("pendingTrade").innerHTML = `
+    <h3>${trade.action} ${trade.ticker}</h3>
+    <p>Type: ${trade.type}</p>
+    <p>Strike: ${trade.strike}</p>
+    <p>Expiration: ${trade.exp}</p>
+    <p>Estimated Cost: ${trade.cost}</p>
+  `;
+}
+
+function approveTrade() {
+  const trade = pendingTrades[currentPendingIndex];
+  activity.unshift([trade.action, trade.ticker, trade.cost, "APPROVED"]);
+  saveActivity();
+  nextPendingTrade();
+  loadActivity();
+  loadRecentActivity();
+}
+
+function rejectTrade() {
+  const trade = pendingTrades[currentPendingIndex];
+  activity.unshift([trade.action, trade.ticker, trade.cost, "REJECTED"]);
+  saveActivity();
+  nextPendingTrade();
+  loadActivity();
+  loadRecentActivity();
+}
+
+function nextPendingTrade() {
+  currentPendingIndex = (currentPendingIndex + 1) % pendingTrades.length;
+  loadPendingTrade();
+}
+
+function loadRiskBox() {
+  if (!$("riskBox")) return;
+
+  $("riskBox").innerHTML = `
+    <p>Open contracts: ${options.length}</p>
+    <p>Open stock holdings: ${holdings.length}</p>
+    <p>Highest risk: Short expiration options</p>
+    <p>Suggested max risk per trade: 1% - 3%</p>
+    <p class="negative">Warning: Same-week options can lose value fast.</p>
+  `;
+}
+
+function statusIcon(status) {
+  if (status === "COMPLETED" || status === "APPROVED") return "✅";
+  if (status === "PENDING") return "⏳";
+  if (status === "REJECTED") return "❌";
+  return "•";
+}
+
+function loadActivity() {
+  if (!$("activityLog")) return;
+
+  $("activityLog").innerHTML = activity.map((item, index) => {
+    const [type, name, amount, status] = item;
+    const cls = amount.includes("+") ? "positive" : amount.includes("-") ? "negative" : "";
+
+    return `
+      <div class="activity-row">
+        <span>${statusIcon(status)} ${type} <b>${name}</b></span>
+        <span class="${cls}">${amount}</span>
+        <span class="badge">${status}</span>
+        <button onclick="deleteActivity(${index})" class="reject">Delete</button>
       </div>
-    </section>
+    `;
+  }).join("");
+}
 
-    <section class="page" id="options">
-      <h2>Options</h2>
-      <p class="subtitle">Contracts, Risk & Approval Flow</p>
+function loadRecentActivity() {
+  if (!$("recentActivity")) return;
 
-      <div class="grid">
-        <div class="card">
-          <p class="label">Options Tracker</p>
+  $("recentActivity").innerHTML = activity.slice(0, 4).map(([type, name, amount, status]) => {
+    const cls = amount.includes("+") ? "positive" : amount.includes("-") ? "negative" : "";
 
-          <table>
-            <thead>
-              <tr>
-                <th>Ticker</th>
-                <th>Type</th>
-                <th>Strike</th>
-                <th>Exp</th>
-                <th>Avg</th>
-                <th>Current</th>
-                <th>P/L</th>
-              </tr>
-            </thead>
-            <tbody id="optionsTable"></tbody>
-          </table>
-        </div>
-
-        <div class="card">
-          <p class="label">Pending Trade Approval</p>
-          <div id="pendingTrade"></div>
-
-          <button id="approveBtn" class="approve">Approve</button>
-          <button id="rejectBtn" class="reject">Reject</button>
-        </div>
-
-        <div class="card">
-          <p class="label">Options Risk Analysis</p>
-          <div id="riskBox"></div>
-        </div>
+    return `
+      <div class="activity-row">
+        <span>${statusIcon(status)} ${type} <b>${name}</b></span>
+        <span class="${cls}">${amount}</span>
+        <span class="badge">${status}</span>
       </div>
-    </section>
+    `;
+  }).join("");
+}
 
-    <section class="page" id="watchlist">
-      <h2>Watchlist</h2>
-      <p class="subtitle">Tracked Market Symbols</p>
+function deleteActivity(index) {
+  activity.splice(index, 1);
+  saveActivity();
+  loadActivity();
+  loadRecentActivity();
+}
 
-      <div class="card">
-        <div id="watchlistGrid" class="watchlist-grid"></div>
-      </div>
-    </section>
+function enableNotifications() {
+  if ("Notification" in window) {
+    Notification.requestPermission();
+  }
+}
 
-    <section class="page" id="activity">
-      <h2>Activity</h2>
-      <p class="subtitle">Trade Journal & Account History</p>
+function sendTradeAlert(alert) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(`AI Trade Alert: ${alert.ticker}`, {
+      body: `${alert.contract} | Avg ${alert.avg} | Move ${alert.stockMove}`,
+    });
+  }
+}
 
-      <div class="card">
-        <div id="activityLog"></div>
-      </div>
-    </section>
+function loadAiAlerts() {
+  if (!$("aiAlerts")) return;
 
-    <section class="page" id="settings">
-      <h2>Settings</h2>
-      <p class="subtitle">Connections & System Status</p>
+  if (aiAlerts.length === 0) {
+    $("aiAlerts").innerHTML = `<p>No AI alerts detected.</p>`;
+    return;
+  }
 
-      <div class="grid">
-        <div class="card">
-          <p class="label">Robinhood Connection</p>
-          <p>🟢 Live Quotes Connected</p>
-          <p class="muted">Backend URL:</p>
-          <code>https://trade-dashboard-api--forrestpbusines.replit.app</code>
-        </div>
+  $("aiAlerts").innerHTML = aiAlerts.map(alert => `
+    <div class="activity-row">
+      <span>
+        <b class="positive">AI ALERT: ${alert.ticker}</b><br>
+        ${alert.direction} — ${alert.contract}<br>
+        Strike: ${alert.strike} | Avg: ${alert.avg} | Breakeven: ${alert.breakeven}<br>
+        Move: ${alert.stockMove}<br>
+        Call Volume: ${alert.callVolume} | OI: ${alert.openInterest} | Vol/OI: ${alert.volumeOi}<br>
+        <small>${alert.reason}</small>
+      </span>
+    </div>
+  `).join("");
+}
 
-        <div class="card">
-          <p class="label">AI Trade Assistant</p>
-          <p>Waiting for live portfolio data before giving full trade analysis.</p>
-        </div>
+function testAiAlert() {
+  const alert = {
+    ticker: "NVDA",
+    direction: "Bullish",
+    contract: "NVDA 6/21 $900 CALL",
+    strike: "$900",
+    avg: "$2.45",
+    breakeven: "$902.45",
+    stockMove: "+4.08% in 1 hour",
+    callVolume: "12,880",
+    openInterest: "4,210",
+    volumeOi: "3.1x",
+    reason: "Stock triggered breakout rule with elevated call volume.",
+  };
 
-        <div class="card">
-          <p class="label">AI Trade Alerts</p>
+  aiAlerts.unshift(alert);
+  saveAiAlerts();
+  loadAiAlerts();
+  sendTradeAlert(alert);
+}
 
-          <button onclick="enableNotifications()" class="approve">
-            Enable Notifications
-          </button>
+function drawPortfolioChart() {
+  const canvas = $("portfolioChart");
+  if (!canvas) return;
 
-          <button onclick="testAiAlert()" class="approve">
-            Test Alert
-          </button>
+  const ctx = canvas.getContext("2d");
+  const p = calculatePortfolio();
 
-          <div id="aiAlerts"></div>
-        </div>
-      </div>
-    </section>
-  </main>
+  const base = p.invested || 10000;
+  const end = p.totalValue || base;
 
-  <script src="./script.js?v=15"></script>
-</body>
-</html>
+  const data = [
+    base * 0.97,
+    base * 0.985,
+    base * 0.975,
+    base * 1.01,
+    base * 0.995,
+    base * 1.015,
+    end,
+  ];
 
+  const width = canvas.width = canvas.offsetWidth;
+  const height = canvas.height = 130;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.strokeStyle = "#00f5ff";
+  ctx.lineWidth = 3;
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+
+  ctx.beginPath();
+
+  data.forEach((value, index) => {
+    const x = (index / (data.length - 1)) * width;
+    const y = height - ((value - min) / range) * (height - 10) + 5;
+
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.stroke();
+}
+
+async function checkBackend() {
+  if (!$("backendStatus")) return;
+
+  try {
+    const response = await fetch(BACKEND_URL);
+    $("backendStatus").textContent = response.ok ? "🟢 Backend Connected" : "🟡 Backend Found";
+  } catch {
+    $("backendStatus").textContent = "🔴 Backend Offline";
+  }
+}
+
+function setupNavigation() {
+  document.querySelectorAll(".nav-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
+
+      button.classList.add("active");
+
+      const page = document.getElementById(button.dataset.page);
+      if (page) page.classList.add("active");
+
+      if (button.dataset.page === "overview") {
+        setTimeout(drawPortfolioChart, 100);
+      }
+    });
+  });
+}
+
+function setupButtons() {
+  if ($("approveBtn")) $("approveBtn").addEventListener("click", approveTrade);
+  if ($("rejectBtn")) $("rejectBtn").addEventListener("click", rejectTrade);
+  if ($("addHoldingBtn")) $("addHoldingBtn").addEventListener("click", addHolding);
+}
+
+function refreshDashboard() {
+  loadOverview();
+  loadPortfolioAnalytics();
+  loadTickerBar();
+  loadMarketStatus();
+  loadMovers();
+  loadWatchlist();
+  loadPositions();
+  loadOptions();
+  loadPendingTrade();
+  loadRiskBox();
+  loadActivity();
+  loadRecentActivity();
+  loadAiAlerts();
+  drawPortfolioChart();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setupButtons();
+  setupNavigation();
+  refreshDashboard();
+  checkBackend();
+  fetchLiveQuotes();
+  setInterval(fetchLiveQuotes, 60000);
+});
 
 
 
