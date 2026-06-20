@@ -1,45 +1,24 @@
 const BACKEND_URL = "https://trade-dashboard-api--forrestpbusines.replit.app";
 
-const portfolio = {
-  totalValue: 52341.87,
-  dailyChange: 412.34,
-  dailyPercent: 0.79,
-  cash: 3241.56,
-  invested: 49100.31,
-  buyingPower: 3241.56,
-  totalReturn: 7241.87,
-};
+const WATCHLIST_SYMBOLS = ["AAPL", "SPY", "TSLA", "NVDA", "QQQ", "IWM", "AGQ"];
 
-const aiAlertRules = {
-  breakoutPercentOneHour: 4,
-  minVolumeSpike: 1.5,
-  minOptionsVolume: 500,
-  alertCooldownMinutes: 30,
-};
+let liveQuotes = {};
+let currentPendingIndex = 0;
 
-const tickers = [
-  ["TSLA", 242.17, -2.15],
-  ["NVDA", 875.39, 2.63],
-  ["META", 487.23, 1.76],
-  ["SPY", 512.87, 0.46],
-  ["QQQ", 436.19, 0.8],
-  ["AAPL", 213.44, 0.34],
+let holdings = JSON.parse(localStorage.getItem("holdings")) || [
+  { ticker: "AAPL", shares: 2, avgCost: 213.44 },
+  { ticker: "SPY", shares: 1, avgCost: 512.87 },
+  { ticker: "TSLA", shares: 2, avgCost: 242.17 },
+  { ticker: "NVDA", shares: 1, avgCost: 875.39 },
 ];
 
-const positions = [
-  ["NVDA", 4, 735.22, 875.39],
-  ["TSLA", 8, 216.44, 242.17],
-  ["MSFT", 5, 404.12, 408.91],
-  ["AAPL", 10, 198.55, 213.44],
-];
-
-const options = [
+let options = JSON.parse(localStorage.getItem("options")) || [
   ["IWM", "CALL", "286", "6/19", 0.09, 0.14],
   ["NVDA", "CALL", "232.5", "6/1", 0.14, 0.22],
   ["SPCE", "CALL", "8", "6/18", 2.54, 3.35],
 ];
 
-const pendingTrades = [
+let pendingTrades = [
   {
     action: "BUY",
     ticker: "NVDA",
@@ -57,8 +36,6 @@ const pendingTrades = [
     cost: "$1,277.10",
   },
 ];
-
-let currentPendingIndex = 0;
 
 let activity = JSON.parse(localStorage.getItem("activityLog")) || [
   ["BUY", "MSFT", "-$2,044.55", "PENDING"],
@@ -83,15 +60,23 @@ let aiAlerts = JSON.parse(localStorage.getItem("aiAlerts")) || [
   },
 ];
 
+function $(id) {
+  return document.getElementById(id);
+}
+
 function money(num) {
-  return num.toLocaleString("en-US", {
+  return Number(num || 0).toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
   });
 }
 
 function percent(num) {
-  return `${num > 0 ? "+" : ""}${num.toFixed(2)}%`;
+  return `${num >= 0 ? "+" : ""}${Number(num || 0).toFixed(2)}%`;
+}
+
+function saveHoldings() {
+  localStorage.setItem("holdings", JSON.stringify(holdings));
 }
 
 function saveActivity() {
@@ -102,163 +87,249 @@ function saveAiAlerts() {
   localStorage.setItem("aiAlerts", JSON.stringify(aiAlerts));
 }
 
-function enableNotifications() {
-  if ("Notification" in window) {
-    Notification.requestPermission();
+function getQuote(symbol) {
+  return liveQuotes[symbol] || null;
+}
+
+function getLivePrice(symbol, fallback = 0) {
+  const quote = getQuote(symbol);
+  return quote?.price || quote?.last || fallback;
+}
+
+function getLiveChange(symbol) {
+  const quote = getQuote(symbol);
+  return quote?.percentChange || quote?.changePercent || quote?.change_percent || 0;
+}
+
+async function fetchLiveQuotes() {
+  try {
+    const symbols = [...new Set([...WATCHLIST_SYMBOLS, ...holdings.map(h => h.ticker)])].join(",");
+    const response = await fetch(`${BACKEND_URL}/api/quotes?symbols=${symbols}`);
+    const data = await response.json();
+
+    if (data.quotes) {
+      liveQuotes = data.quotes;
+    } else if (data.data) {
+      liveQuotes = data.data;
+    }
+
+    const lastUpdated = $("lastUpdated");
+    if (lastUpdated) {
+      lastUpdated.textContent = `Last Updated: ${new Date().toLocaleTimeString()}`;
+    }
+
+    refreshDashboard();
+  } catch (error) {
+    console.log("Live quotes failed:", error);
   }
 }
 
-function sendTradeAlert(alert) {
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification(`AI Trade Alert: ${alert.ticker}`, {
-      body: `${alert.contract} | Avg ${alert.avg} | Move ${alert.stockMove}`,
-    });
-  }
-}
+function calculatePortfolio() {
+  let invested = 0;
+  let totalValue = 0;
 
-function loadAiAlerts() {
-  const box = document.getElementById("aiAlerts");
-  if (!box) return;
+  holdings.forEach(h => {
+    const current = getLivePrice(h.ticker, h.avgCost);
+    invested += h.shares * h.avgCost;
+    totalValue += h.shares * current;
+  });
 
-  if (aiAlerts.length === 0) {
-    box.innerHTML = `<p>No AI alerts detected.</p>`;
-    return;
-  }
+  const totalReturn = totalValue - invested;
+  const dailyChange = holdings.reduce((sum, h) => {
+    const quote = getQuote(h.ticker);
+    const change = quote?.change || quote?.priceChange || 0;
+    return sum + change * h.shares;
+  }, 0);
 
-  box.innerHTML = aiAlerts
-    .map(alert => {
-      return `
-        <div class="activity-row">
-          <span>
-            <b class="positive">AI ALERT: ${alert.ticker}</b><br>
-            ${alert.direction} — ${alert.contract}<br>
-            Strike: ${alert.strike} | Avg: ${alert.avg} | Breakeven: ${alert.breakeven}<br>
-            Move: ${alert.stockMove}<br>
-            Call Volume: ${alert.callVolume} | OI: ${alert.openInterest} | Vol/OI: ${alert.volumeOi}<br>
-            <small>${alert.reason}</small>
-          </span>
-        </div>
-      `;
-    })
-    .join("");
-}
+  const dailyPercent = totalValue > 0 ? (dailyChange / totalValue) * 100 : 0;
 
-function testAiAlert() {
-  const alert = {
-    ticker: "NVDA",
-    direction: "Bullish",
-    contract: "NVDA 6/21 $900 CALL",
-    strike: "$900",
-    avg: "$2.45",
-    breakeven: "$902.45",
-    stockMove: "+4.08% in 1 hour",
-    callVolume: "12,880",
-    openInterest: "4,210",
-    volumeOi: "3.1x",
-    reason: "Stock triggered breakout rule with elevated call volume.",
+  return {
+    totalValue,
+    invested,
+    cash: 3241.56,
+    buyingPower: 3241.56,
+    totalReturn,
+    dailyChange,
+    dailyPercent,
   };
-
-  aiAlerts.unshift(alert);
-  saveAiAlerts();
-  loadAiAlerts();
-  sendTradeAlert(alert);
 }
 
 function loadOverview() {
-  totalValue.textContent = money(portfolio.totalValue);
-  dailyChange.textContent = `+${money(portfolio.dailyChange)} (${percent(portfolio.dailyPercent)})`;
-  dailyChange.className = "positive";
-  cashValue.textContent = money(portfolio.cash);
-  investedValue.textContent = money(portfolio.invested);
-  buyingPower.textContent = money(portfolio.buyingPower);
-  totalReturn.textContent = `+${money(portfolio.totalReturn)}`;
-  totalReturn.className = "positive";
+  const portfolio = calculatePortfolio();
+
+  if ($("totalValue")) $("totalValue").textContent = money(portfolio.totalValue);
+  if ($("dailyChange")) {
+    $("dailyChange").textContent = `${money(portfolio.dailyChange)} (${percent(portfolio.dailyPercent)})`;
+    $("dailyChange").className = portfolio.dailyChange >= 0 ? "positive" : "negative";
+  }
+  if ($("cashValue")) $("cashValue").textContent = money(portfolio.cash);
+  if ($("investedValue")) $("investedValue").textContent = money(portfolio.invested);
+  if ($("buyingPower")) $("buyingPower").textContent = money(portfolio.buyingPower);
+  if ($("totalReturn")) {
+    $("totalReturn").textContent = money(portfolio.totalReturn);
+    $("totalReturn").className = portfolio.totalReturn >= 0 ? "positive" : "negative";
+  }
 }
 
 function loadTickerBar() {
-  tickerBar.innerHTML = tickers
-    .map(([symbol, price, change]) => {
-      const cls = change >= 0 ? "positive" : "negative";
-      return `<span>${symbol} ${price.toFixed(2)} <b class="${cls}">${percent(change)}</b></span>`;
-    })
-    .join("");
+  const tickerBar = $("tickerBar");
+  if (!tickerBar) return;
+
+  tickerBar.innerHTML = WATCHLIST_SYMBOLS.map(symbol => {
+    const price = getLivePrice(symbol, 0);
+    const change = getLiveChange(symbol);
+    const cls = change >= 0 ? "positive" : "negative";
+
+    return `<span>${symbol} ${money(price)} <b class="${cls}">${percent(change)}</b></span>`;
+  }).join("");
+}
+
+function loadWatchlist() {
+  const watchlistGrid = $("watchlistGrid");
+  if (!watchlistGrid) return;
+
+  watchlistGrid.innerHTML = WATCHLIST_SYMBOLS.map(symbol => {
+    const price = getLivePrice(symbol, 0);
+    const change = getLiveChange(symbol);
+    const cls = change >= 0 ? "positive" : "negative";
+
+    return `
+      <div class="watch-card">
+        <strong>${symbol}</strong>
+        <span>${money(price)}</span>
+        <span class="${cls}">${percent(change)}</span>
+      </div>
+    `;
+  }).join("");
 }
 
 function loadMarketStatus() {
-  marketStatusList.innerHTML = tickers
-    .slice(3)
-    .map(([symbol, price, change]) => {
-      const cls = change >= 0 ? "positive" : "negative";
-      return `
-        <div class="market-row">
-          <span>${symbol}</span>
-          <span>${price.toFixed(2)}</span>
-          <span class="${cls}">${percent(change)}</span>
-        </div>
-      `;
-    })
-    .join("");
+  const marketStatusList = $("marketStatusList");
+  if (!marketStatusList) return;
+
+  marketStatusList.innerHTML = WATCHLIST_SYMBOLS.slice(0, 5).map(symbol => {
+    const price = getLivePrice(symbol, 0);
+    const change = getLiveChange(symbol);
+    const cls = change >= 0 ? "positive" : "negative";
+
+    return `
+      <div class="market-row">
+        <span>${symbol}</span>
+        <span>${money(price)}</span>
+        <span class="${cls}">${percent(change)}</span>
+      </div>
+    `;
+  }).join("");
 }
 
 function loadMovers() {
-  const gainers = tickers.filter(t => t[2] > 0).slice(0, 3);
-  const losers = tickers.filter(t => t[2] < 0).slice(0, 3);
+  const gainersList = $("gainersList");
+  const losersList = $("losersList");
+  if (!gainersList || !losersList) return;
 
-  gainersList.innerHTML = gainers
-    .map(t => `<div class="mover-row"><span>${t[0]}</span><span class="positive">${percent(t[2])}</span></div>`)
+  const sorted = WATCHLIST_SYMBOLS.map(symbol => ({
+    symbol,
+    change: getLiveChange(symbol),
+  })).sort((a, b) => b.change - a.change);
+
+  gainersList.innerHTML = sorted
+    .filter(x => x.change >= 0)
+    .slice(0, 3)
+    .map(x => `<div class="mover-row"><span>${x.symbol}</span><span class="positive">${percent(x.change)}</span></div>`)
     .join("");
 
-  losersList.innerHTML = losers
-    .map(t => `<div class="mover-row"><span>${t[0]}</span><span class="negative">${percent(t[2])}</span></div>`)
+  losersList.innerHTML = sorted
+    .filter(x => x.change < 0)
+    .slice(0, 3)
+    .map(x => `<div class="mover-row"><span>${x.symbol}</span><span class="negative">${percent(x.change)}</span></div>`)
     .join("");
 }
 
 function loadPositions() {
-  positionsTable.innerHTML = positions
-    .map(([ticker, shares, avg, current]) => {
-      const value = shares * current;
-      const cost = shares * avg;
-      const pl = value - cost;
-      const plPercent = (pl / cost) * 100;
-      const cls = pl >= 0 ? "positive" : "negative";
+  const positionsTable = $("positionsTable");
+  if (!positionsTable) return;
 
-      return `
-        <tr>
-          <td>${ticker}</td>
-          <td>${shares}</td>
-          <td>${money(avg)}</td>
-          <td>${money(current)}</td>
-          <td>${money(value)}</td>
-          <td class="${cls}">${money(pl)}</td>
-          <td class="${cls}">${percent(plPercent)}</td>
-        </tr>
-      `;
-    })
-    .join("");
+  positionsTable.innerHTML = holdings.map((h, index) => {
+    const current = getLivePrice(h.ticker, h.avgCost);
+    const value = h.shares * current;
+    const cost = h.shares * h.avgCost;
+    const pl = value - cost;
+    const plPercent = cost > 0 ? (pl / cost) * 100 : 0;
+    const cls = pl >= 0 ? "positive" : "negative";
+
+    return `
+      <tr>
+        <td>${h.ticker}</td>
+        <td>${h.shares}</td>
+        <td>${money(h.avgCost)}</td>
+        <td>${money(current)}</td>
+        <td>${money(value)}</td>
+        <td class="${cls}">${money(pl)}</td>
+        <td class="${cls}">${percent(plPercent)}</td>
+        <td><button class="reject" onclick="deleteHolding(${index})">Delete</button></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function addHolding() {
+  const tickerInput = $("holdingTicker");
+  const sharesInput = $("holdingShares");
+  const avgInput = $("holdingAvg");
+
+  if (!tickerInput || !sharesInput || !avgInput) return;
+
+  const ticker = tickerInput.value.trim().toUpperCase();
+  const shares = Number(sharesInput.value);
+  const avgCost = Number(avgInput.value);
+
+  if (!ticker || shares <= 0 || avgCost <= 0) {
+    alert("Enter ticker, shares, and average cost.");
+    return;
+  }
+
+  holdings.push({ ticker, shares, avgCost });
+  saveHoldings();
+
+  tickerInput.value = "";
+  sharesInput.value = "";
+  avgInput.value = "";
+
+  fetchLiveQuotes();
+}
+
+function deleteHolding(index) {
+  holdings.splice(index, 1);
+  saveHoldings();
+  refreshDashboard();
 }
 
 function loadOptions() {
-  optionsTable.innerHTML = options
-    .map(([ticker, type, strike, exp, avg, current]) => {
-      const pl = (current - avg) * 100;
-      const cls = pl >= 0 ? "positive" : "negative";
+  const optionsTable = $("optionsTable");
+  if (!optionsTable) return;
 
-      return `
-        <tr>
-          <td>${ticker}</td>
-          <td>${type}</td>
-          <td>${strike}</td>
-          <td>${exp}</td>
-          <td>$${avg.toFixed(2)}</td>
-          <td>$${current.toFixed(2)}</td>
-          <td class="${cls}">${money(pl)}</td>
-        </tr>
-      `;
-    })
-    .join("");
+  optionsTable.innerHTML = options.map(([ticker, type, strike, exp, avg, current]) => {
+    const pl = (current - avg) * 100;
+    const cls = pl >= 0 ? "positive" : "negative";
+
+    return `
+      <tr>
+        <td>${ticker}</td>
+        <td>${type}</td>
+        <td>${strike}</td>
+        <td>${exp}</td>
+        <td>$${avg.toFixed(2)}</td>
+        <td>$${current.toFixed(2)}</td>
+        <td class="${cls}">${money(pl)}</td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function loadPendingTrade() {
+  const pendingTrade = $("pendingTrade");
+  if (!pendingTrade) return;
+
   const trade = pendingTrades[currentPendingIndex];
 
   pendingTrade.innerHTML = `
@@ -294,28 +365,16 @@ function nextPendingTrade() {
 }
 
 function loadRiskBox() {
+  const riskBox = $("riskBox");
+  if (!riskBox) return;
+
   riskBox.innerHTML = `
     <p>Open contracts: ${options.length}</p>
-    <p>Highest risk: Short expiration calls</p>
+    <p>Open stock holdings: ${holdings.length}</p>
+    <p>Highest risk: Short expiration options</p>
     <p>Suggested max risk per trade: 1% - 3%</p>
     <p class="negative">Warning: Same-week options can lose value fast.</p>
   `;
-}
-
-function loadWatchlist() {
-  watchlistGrid.innerHTML = tickers
-    .map(([symbol, price, change]) => {
-      const cls = change >= 0 ? "positive" : "negative";
-
-      return `
-        <div class="watch-card">
-          <strong>${symbol}</strong>
-          <span>${money(price)}</span>
-          <span class="${cls}">${percent(change)}</span>
-        </div>
-      `;
-    })
-    .join("");
 }
 
 function statusIcon(status) {
@@ -326,38 +385,39 @@ function statusIcon(status) {
 }
 
 function loadActivity() {
-  activityLog.innerHTML = activity
-    .map((item, index) => {
-      const [type, name, amount, status] = item;
-      const cls = amount.includes("+") ? "positive" : amount.includes("-") ? "negative" : "";
+  const activityLog = $("activityLog");
+  if (!activityLog) return;
 
-      return `
-        <div class="activity-row">
-          <span>${statusIcon(status)} ${type} <b>${name}</b></span>
-          <span class="${cls}">${amount}</span>
-          <span class="badge">${status}</span>
-          <button onclick="deleteActivity(${index})" class="reject">Delete</button>
-        </div>
-      `;
-    })
-    .join("");
+  activityLog.innerHTML = activity.map((item, index) => {
+    const [type, name, amount, status] = item;
+    const cls = amount.includes("+") ? "positive" : amount.includes("-") ? "negative" : "";
+
+    return `
+      <div class="activity-row">
+        <span>${statusIcon(status)} ${type} <b>${name}</b></span>
+        <span class="${cls}">${amount}</span>
+        <span class="badge">${status}</span>
+        <button onclick="deleteActivity(${index})" class="reject">Delete</button>
+      </div>
+    `;
+  }).join("");
 }
 
 function loadRecentActivity() {
-  recentActivity.innerHTML = activity
-    .slice(0, 4)
-    .map(([type, name, amount, status]) => {
-      const cls = amount.includes("+") ? "positive" : amount.includes("-") ? "negative" : "";
+  const recentActivity = $("recentActivity");
+  if (!recentActivity) return;
 
-      return `
-        <div class="activity-row">
-          <span>${statusIcon(status)} ${type} <b>${name}</b></span>
-          <span class="${cls}">${amount}</span>
-          <span class="badge">${status}</span>
-        </div>
-      `;
-    })
-    .join("");
+  recentActivity.innerHTML = activity.slice(0, 4).map(([type, name, amount, status]) => {
+    const cls = amount.includes("+") ? "positive" : amount.includes("-") ? "negative" : "";
+
+    return `
+      <div class="activity-row">
+        <span>${statusIcon(status)} ${type} <b>${name}</b></span>
+        <span class="${cls}">${amount}</span>
+        <span class="badge">${status}</span>
+      </div>
+    `;
+  }).join("");
 }
 
 function deleteActivity(index) {
@@ -367,12 +427,84 @@ function deleteActivity(index) {
   loadRecentActivity();
 }
 
+function enableNotifications() {
+  if ("Notification" in window) {
+    Notification.requestPermission();
+  }
+}
+
+function sendTradeAlert(alert) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(`AI Trade Alert: ${alert.ticker}`, {
+      body: `${alert.contract} | Avg ${alert.avg} | Move ${alert.stockMove}`,
+    });
+  }
+}
+
+function loadAiAlerts() {
+  const box = $("aiAlerts");
+  if (!box) return;
+
+  if (aiAlerts.length === 0) {
+    box.innerHTML = `<p>No AI alerts detected.</p>`;
+    return;
+  }
+
+  box.innerHTML = aiAlerts.map(alert => {
+    return `
+      <div class="activity-row">
+        <span>
+          <b class="positive">AI ALERT: ${alert.ticker}</b><br>
+          ${alert.direction} — ${alert.contract}<br>
+          Strike: ${alert.strike} | Avg: ${alert.avg} | Breakeven: ${alert.breakeven}<br>
+          Move: ${alert.stockMove}<br>
+          Call Volume: ${alert.callVolume} | OI: ${alert.openInterest} | Vol/OI: ${alert.volumeOi}<br>
+          <small>${alert.reason}</small>
+        </span>
+      </div>
+    `;
+  }).join("");
+}
+
+function testAiAlert() {
+  const alert = {
+    ticker: "NVDA",
+    direction: "Bullish",
+    contract: "NVDA 6/21 $900 CALL",
+    strike: "$900",
+    avg: "$2.45",
+    breakeven: "$902.45",
+    stockMove: "+4.08% in 1 hour",
+    callVolume: "12,880",
+    openInterest: "4,210",
+    volumeOi: "3.1x",
+    reason: "Stock triggered breakout rule with elevated call volume.",
+  };
+
+  aiAlerts.unshift(alert);
+  saveAiAlerts();
+  loadAiAlerts();
+  sendTradeAlert(alert);
+}
+
 function drawPortfolioChart() {
-  const canvas = document.getElementById("portfolioChart");
+  const canvas = $("portfolioChart");
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
-  const data = [50000, 50600, 50250, 51400, 50900, 51800, 52341];
+  const portfolio = calculatePortfolio();
+  const base = portfolio.invested || 10000;
+  const end = portfolio.totalValue || base;
+  const data = [
+    base * 0.97,
+    base * 0.985,
+    base * 0.975,
+    base * 1.01,
+    base * 0.995,
+    base * 1.015,
+    end,
+  ];
+
   const width = canvas.width = canvas.offsetWidth;
   const height = canvas.height = 130;
 
@@ -382,12 +514,13 @@ function drawPortfolioChart() {
 
   const min = Math.min(...data);
   const max = Math.max(...data);
+  const range = max - min || 1;
 
   ctx.beginPath();
 
   data.forEach((value, index) => {
     const x = (index / (data.length - 1)) * width;
-    const y = height - ((value - min) / (max - min)) * height + 5;
+    const y = height - ((value - min) / range) * (height - 10) + 5;
 
     if (index === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
@@ -397,6 +530,9 @@ function drawPortfolioChart() {
 }
 
 async function checkBackend() {
+  const backendStatus = $("backendStatus");
+  if (!backendStatus) return;
+
   try {
     const response = await fetch(BACKEND_URL);
 
@@ -417,7 +553,9 @@ function setupNavigation() {
       document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
 
       button.classList.add("active");
-      document.getElementById(button.dataset.page).classList.add("active");
+
+      const page = document.getElementById(button.dataset.page);
+      if (page) page.classList.add("active");
 
       if (button.dataset.page === "overview") {
         setTimeout(drawPortfolioChart, 100);
@@ -426,24 +564,39 @@ function setupNavigation() {
   });
 }
 
-approveBtn.addEventListener("click", approveTrade);
-rejectBtn.addEventListener("click", rejectTrade);
+function setupButtons() {
+  const approveBtn = $("approveBtn");
+  const rejectBtn = $("rejectBtn");
+  const addHoldingBtn = $("addHoldingBtn");
 
-loadOverview();
-loadTickerBar();
-loadMarketStatus();
-loadMovers();
-loadPositions();
-loadOptions();
-loadPendingTrade();
-loadRiskBox();
-loadWatchlist();
-loadActivity();
-loadRecentActivity();
-loadAiAlerts();
+  if (approveBtn) approveBtn.addEventListener("click", approveTrade);
+  if (rejectBtn) rejectBtn.addEventListener("click", rejectTrade);
+  if (addHoldingBtn) addHoldingBtn.addEventListener("click", addHolding);
+}
+
+function refreshDashboard() {
+  loadOverview();
+  loadTickerBar();
+  loadMarketStatus();
+  loadMovers();
+  loadPositions();
+  loadOptions();
+  loadPendingTrade();
+  loadRiskBox();
+  loadWatchlist();
+  loadActivity();
+  loadRecentActivity();
+  loadAiAlerts();
+  drawPortfolioChart();
+}
+
+setupButtons();
 setupNavigation();
-drawPortfolioChart();
+refreshDashboard();
 checkBackend();
+fetchLiveQuotes();
+
+setInterval(fetchLiveQuotes, 60000);
 
 
 
