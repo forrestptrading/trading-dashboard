@@ -1048,6 +1048,12 @@ function setText(id, value) {
   }
 }
 
-
+window.addEventListener("load", () => {
+  document.getElementById("portfolioValue").textContent = "$52,341.87";
+  document.getElementById("buyingPower").textContent = "$3,241.56";
+  document.getElementById("dailyPL").textContent = "$412.34";
+  document.getElementById("dailyPLPercent").textContent = "0.79%";
+  document.getElementById("openPositions").textContent = "4";
+});
 
 
