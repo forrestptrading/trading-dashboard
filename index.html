@@ -3,329 +3,347 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trading Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <title>Forrest Trading Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
   <div class="app-shell">
-
-    <!-- LEFT SIDE MENU -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">FP</div>
         <div>
-          <h1>Trading Dashboard</h1>
-          <p>GitHub-only mode</p>
+          <h1>Trading Hub</h1>
+          <p>Multi-platform dashboard</p>
         </div>
-        <button class="sidebar-toggle" id="sidebarToggle">☰</button>
       </div>
 
       <nav class="side-nav">
         <button class="nav-btn active" data-section="overview">Overview</button>
-        <button class="nav-btn" data-section="positions">Positions</button>
-        <button class="nav-btn" data-section="options">Options</button>
         <button class="nav-btn" data-section="watchlist">Watchlist</button>
-        <button class="nav-btn" data-section="journal">Trade Journal</button>
-        <button class="nav-btn" data-section="analytics">Analytics</button>
+        <button class="nav-btn" data-section="accounts">Accounts</button>
+        <button class="nav-btn" data-section="holdings">Holdings</button>
+        <button class="nav-btn" data-section="options">Options</button>
+        <button class="nav-btn" data-section="journal">Journal</button>
         <button class="nav-btn" data-section="settings">Settings</button>
       </nav>
 
       <div class="sidebar-footer">
-        <span class="status-dot"></span>
-        <span>Local Save Active</span>
+        <p>Backend</p>
+        <span id="backendStatus">Checking...</span>
       </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
-    <main class="main-content">
-
-      <header class="top-bar">
+    <main class="dashboard">
+      <header class="topbar">
         <div>
-          <h2 id="pageTitle">Overview</h2>
-          <p id="pageSubtitle">Portfolio summary and daily trading snapshot</p>
+          <h2>Portfolio Command Center</h2>
+          <p>Live quotes first. Multi-account integrations next.</p>
         </div>
 
         <div class="top-actions">
-          <button class="secondary-btn" id="resetDemoBtn">Reset Demo</button>
-          <button class="primary-btn" id="saveAllBtn">Save</button>
+          <button id="refreshQuotesBtn">Refresh Quotes</button>
+          <button id="connectPlaidBtn">Connect Account</button>
         </div>
       </header>
 
-      <!-- OVERVIEW -->
-      <section class="page-section active" id="overview">
-        <div class="stats-grid">
-          <div class="stat-card">
+      <section id="overview" class="page-section active-section">
+        <div class="summary-grid">
+          <article class="summary-card">
             <span>Daily P/L</span>
             <strong id="dailyPL">$0.00</strong>
             <small id="dailyPLPercent">0.00%</small>
-          </div>
+          </article>
 
-          <div class="stat-card">
+          <article class="summary-card">
             <span>Buying Power</span>
             <strong id="buyingPower">$0.00</strong>
-            <small>Available cash</small>
-          </div>
+            <small>Across connected accounts</small>
+          </article>
 
-          <div class="stat-card">
+          <article class="summary-card">
             <span>Portfolio Value</span>
             <strong id="portfolioValue">$0.00</strong>
-            <small id="portfolioReturn">Total return: $0.00</small>
-          </div>
+            <small id="accountCount">0 accounts connected</small>
+          </article>
 
-          <div class="stat-card">
+          <article class="summary-card">
             <span>Open Positions</span>
             <strong id="openPositions">0</strong>
-            <small>Stocks + ETFs</small>
-          </div>
-
-          <div class="stat-card">
-            <span>Options Contracts</span>
-            <strong id="optionsContracts">0</strong>
-            <small>Open contracts</small>
-          </div>
-
-          <div class="stat-card">
-            <span>Win Rate</span>
-            <strong id="winRate">0%</strong>
-            <small>Closed trades</small>
-          </div>
+            <small>Stocks + ETFs + options</small>
+          </article>
         </div>
 
-        <div class="dashboard-grid">
-          <div class="panel">
+        <div class="content-grid">
+          <section class="panel large-panel">
             <div class="panel-header">
-              <h3>Portfolio Goal</h3>
+              <div>
+                <h3>Live Quote Board</h3>
+                <p>Add any ticker and pull live prices from your backend.</p>
+              </div>
             </div>
-            <div class="goal-box">
-              <div class="goal-row">
-                <span>Current</span>
-                <strong id="goalCurrent">$0.00</strong>
-              </div>
-              <div class="goal-row">
-                <span>Goal</span>
-                <strong id="goalTarget">$100,000.00</strong>
-              </div>
-              <div class="progress-bar">
-                <div id="goalProgress"></div>
-              </div>
-              <small id="goalPercent">0% complete</small>
-            </div>
-          </div>
 
-          <div class="panel">
+            <form id="addTickerForm" class="ticker-form">
+              <input 
+                id="tickerInput" 
+                type="text" 
+                placeholder="Add ticker: AAPL, TSLA, SPY..." 
+                autocomplete="off"
+              />
+              <button type="submit">Add</button>
+            </form>
+
+            <div id="quoteGrid" class="quote-grid"></div>
+          </section>
+
+          <section class="panel">
             <div class="panel-header">
-              <h3>AI Trade Score</h3>
+              <div>
+                <h3>Connected Accounts</h3>
+                <p>Plaid-ready account structure.</p>
+              </div>
             </div>
-            <div class="score-circle">
-              <span id="aiScore">72</span>
-              <small>/100</small>
-            </div>
-            <p class="muted">Based on risk, trend, position size, and journal discipline.</p>
-          </div>
+
+            <div id="accountsList" class="accounts-list"></div>
+          </section>
         </div>
       </section>
 
-      <!-- POSITIONS -->
-      <section class="page-section" id="positions">
-        <div class="panel">
+      <section id="watchlist" class="page-section">
+        <section class="panel">
           <div class="panel-header">
-            <h3>Open Positions</h3>
-            <button class="primary-btn" id="addPositionBtn">Add Position</button>
+            <div>
+              <h3>Watchlist</h3>
+              <p>Your saved tickers stay after refresh.</p>
+            </div>
           </div>
 
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Symbol</th>
-                  <th>Shares</th>
-                  <th>Avg Cost</th>
-                  <th>Current</th>
-                  <th>Value</th>
-                  <th>P/L</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="positionsTable"></tbody>
-            </table>
-          </div>
-        </div>
+          <form id="watchlistForm" class="ticker-form">
+            <input 
+              id="watchlistInput" 
+              type="text" 
+              placeholder="Add ticker to watchlist..." 
+              autocomplete="off"
+            />
+            <button type="submit">Add Stock</button>
+          </form>
+
+          <div id="watchlistTable" class="data-table"></div>
+        </section>
       </section>
 
-      <!-- OPTIONS -->
-      <section class="page-section" id="options">
-        <div class="panel">
+      <section id="accounts" class="page-section">
+        <section class="panel">
           <div class="panel-header">
-            <h3>Options Tracker</h3>
-            <button class="primary-btn" id="addOptionBtn">Add Option</button>
-          </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Ticker</th>
-                  <th>Type</th>
-                  <th>Strike</th>
-                  <th>Expiration</th>
-                  <th>Contracts</th>
-                  <th>Avg</th>
-                  <th>Current</th>
-                  <th>P/L</th>
-                  <th>Status</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="optionsTable"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="dashboard-grid">
-          <div class="panel">
-            <div class="panel-header">
-              <h3>Options Portfolio Summary</h3>
-            </div>
-            <div class="mini-stats">
-              <div>
-                <span>Total Cost</span>
-                <strong id="optionsCost">$0.00</strong>
-              </div>
-              <div>
-                <span>Current Value</span>
-                <strong id="optionsValue">$0.00</strong>
-              </div>
-              <div>
-                <span>Open P/L</span>
-                <strong id="optionsPL">$0.00</strong>
-              </div>
+            <div>
+              <h3>Brokerage Connections</h3>
+              <p>Designed for Robinhood, SoFi, Fidelity, Schwab, Webull, and more.</p>
             </div>
           </div>
 
-          <div class="panel">
-            <div class="panel-header">
-              <h3>Options Risk Analysis</h3>
-            </div>
-            <p id="riskSummary" class="muted">Risk summary will update automatically.</p>
-          </div>
-        </div>
+          <div id="brokerCards" class="broker-grid"></div>
+        </section>
       </section>
 
-      <!-- WATCHLIST -->
-      <section class="page-section" id="watchlist">
-        <div class="panel">
+      <section id="holdings" class="page-section">
+        <section class="panel">
           <div class="panel-header">
-            <h3>Watchlist</h3>
-            <button class="primary-btn" id="addWatchBtn">Add Ticker</button>
+            <div>
+              <h3>Combined Holdings</h3>
+              <p>Once accounts connect, positions from every platform appear here.</p>
+            </div>
           </div>
-          <div id="watchlistGrid" class="watchlist-grid"></div>
-        </div>
+
+          <div id="holdingsTable" class="data-table"></div>
+        </section>
       </section>
 
-      <!-- JOURNAL -->
-      <section class="page-section" id="journal">
-        <div class="panel">
+            <section id="options" class="page-section">
+        <section class="panel">
           <div class="panel-header">
-            <h3>Trade Journal</h3>
-            <button class="primary-btn" id="addJournalBtn">Add Trade</button>
+            <div>
+              <h3>Options Center</h3>
+              <p>Open contracts, risk analysis, and performance tracking.</p>
+            </div>
           </div>
-          <div id="journalList" class="journal-list"></div>
-        </div>
+
+          <div class="summary-grid">
+            <article class="summary-card">
+              <span>Open Contracts</span>
+              <strong id="optionContracts">0</strong>
+              <small>Currently active</small>
+            </article>
+
+            <article class="summary-card">
+              <span>Options P/L</span>
+              <strong id="optionsPL">$0.00</strong>
+              <small>Combined positions</small>
+            </article>
+
+            <article class="summary-card">
+              <span>Win Rate</span>
+              <strong id="optionWinRate">0%</strong>
+              <small>Closed trades</small>
+            </article>
+
+            <article class="summary-card">
+              <span>Risk Score</span>
+              <strong id="riskScore">0</strong>
+              <small>AI scoring model</small>
+            </article>
+          </div>
+
+          <div class="content-grid">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h3>Open Positions</h3>
+                </div>
+              </div>
+
+              <div id="openOptionsTable" class="data-table"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h3>Risk Analysis</h3>
+                </div>
+              </div>
+
+              <div id="riskAnalysisBox"></div>
+            </section>
+          </div>
+        </section>
       </section>
 
-      <!-- ANALYTICS -->
-      <section class="page-section" id="analytics">
-        <div class="dashboard-grid">
-          <div class="panel">
-            <div class="panel-header">
-              <h3>Trade Performance</h3>
-            </div>
-            <div class="mini-stats">
-              <div>
-                <span>Total Trades</span>
-                <strong id="totalTrades">0</strong>
-              </div>
-              <div>
-                <span>Wins</span>
-                <strong id="winningTrades">0</strong>
-              </div>
-              <div>
-                <span>Losses</span>
-                <strong id="losingTrades">0</strong>
-              </div>
+      <section id="journal" class="page-section">
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Trade Journal</h3>
+              <p>Track approved and rejected trades.</p>
             </div>
           </div>
 
-          <div class="panel">
-            <div class="panel-header">
-              <h3>Account Health</h3>
+          <form id="journalForm" class="journal-form">
+            <input
+              id="journalTicker"
+              type="text"
+              placeholder="Ticker"
+            />
+
+            <input
+              id="journalStrategy"
+              type="text"
+              placeholder="Strategy"
+            />
+
+            <input
+              id="journalResult"
+              type="text"
+              placeholder="Result"
+            />
+
+            <button type="submit">
+              Save Trade
+            </button>
+          </form>
+
+          <div id="journalEntries"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Pending Trade Approval</h3>
+              <p>Approve or reject before execution.</p>
             </div>
-            <p id="accountHealth" class="muted">Account health will update here.</p>
           </div>
-        </div>
+
+          <div id="tradeApprovalCard">
+            <h4 id="approvalTicker">NVDA</h4>
+
+            <p id="approvalDescription">
+              Sample trade awaiting review.
+            </p>
+
+            <div class="approval-buttons">
+              <button id="approveTradeBtn">
+                Approve
+              </button>
+
+              <button id="rejectTradeBtn">
+                Reject
+              </button>
+            </div>
+          </div>
+
+          <div id="approvalHistory"></div>
+        </section>
       </section>
 
-            <!-- SETTINGS -->
-      <section class="page-section" id="settings">
-        <div class="dashboard-grid">
-          <div class="panel">
-            <div class="panel-header">
-              <h3>Portfolio Settings</h3>
+      <section id="settings" class="page-section">
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Settings</h3>
+              <p>Dashboard preferences and goals.</p>
             </div>
+          </div>
 
-            <div class="form-grid">
-              <label>
-                Starting Balance
-                <input type="number" id="startingBalanceInput" />
-              </label>
-
+          <div class="settings-grid">
+            <div class="setting-card">
               <label>
                 Portfolio Goal
-                <input type="number" id="goalInput" />
               </label>
 
-              <label>
-                Cash / Buying Power
-                <input type="number" id="cashInput" />
-              </label>
+              <input
+                id="goalInput"
+                type="number"
+                placeholder="100000"
+              />
 
-              <label>
-                Daily P/L
-                <input type="number" id="dailyInput" />
-              </label>
+              <button id="saveGoalBtn">
+                Save Goal
+              </button>
             </div>
 
-            <button class="primary-btn full-btn" id="saveSettingsBtn">Save Settings</button>
-          </div>
+            <div class="setting-card">
+              <label>
+                Notifications
+              </label>
 
-          <div class="panel">
-            <div class="panel-header">
-              <h3>Dashboard Notes</h3>
+              <button id="enableNotificationsBtn">
+                Enable Notifications
+              </button>
+
+              <button id="testNotificationBtn">
+                Test Alert
+              </button>
             </div>
-            <textarea id="notesInput" rows="10" placeholder="Write trade rules, reminders, or strategy notes here..."></textarea>
-            <button class="secondary-btn full-btn" id="saveNotesBtn">Save Notes</button>
+
+            <div class="setting-card">
+              <label>
+                Backend Status
+              </label>
+
+              <div id="backendHealthStatus">
+                Waiting...
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
       </section>
 
     </main>
   </div>
 
-  <!-- UNIVERSAL MODAL -->
-  <div class="modal-backdrop" id="modalBackdrop">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="modalTitle">Add Item</h3>
-        <button id="closeModalBtn">×</button>
-      </div>
-
-      <form id="modalForm" class="modal-form"></form>
-    </div>
-  </div>
-
-  <script src="script.js?v=3"></script>
+  <script src="script.js"></script>
 </body>
 </html>
+
+      
 
 
 
