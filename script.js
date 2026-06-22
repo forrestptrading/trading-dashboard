@@ -696,15 +696,8 @@ function renderPortfolioSummary() {
   const demoDailyPL = 412.34;
   const demoDailyPercent = 0.79;
 
-  const totalValue =
-    accountTotal > 0
-      ? accountTotal
-      : demoPortfolioValue;
-
-  const buyingPower =
-    accountBuyingPower > 0
-      ? accountBuyingPower
-      : demoBuyingPower;
+  const totalValue = accountTotal > 0 ? accountTotal : demoPortfolioValue;
+  const buyingPower = accountBuyingPower > 0 ? accountBuyingPower : demoBuyingPower;
 
   const allHoldings = connectedAccounts.flatMap((account) => {
     return account.holdings || [];
@@ -718,10 +711,8 @@ function renderPortfolioSummary() {
   setText("buyingPower", formatCurrency(buyingPower));
   setText("openPositions", allHoldings.length || 4);
   setText("accountCount", `${connectedCount} accounts connected`);
-
   setText("dailyPL", formatCurrency(demoDailyPL));
   setText("dailyPLPercent", formatPercent(demoDailyPercent));
-}
 }
 
 /* OPTIONS */
@@ -756,21 +747,10 @@ function renderOptions() {
 
     return `
       <div class="table-row">
-        <strong>
-          ${option.ticker} ${option.type}
-        </strong>
-
-        <span>
-          $${option.strike} / ${option.expiration}
-        </span>
-
-        <span>
-          ${option.contracts} contracts
-        </span>
-
-        <span class="${plClass}">
-          ${formatCurrency(pl)}
-        </span>
+        <strong>${option.ticker} ${option.type}</strong>
+        <span>$${option.strike} / ${option.expiration}</span>
+        <span>${option.contracts} contracts</span>
+        <span class="${plClass}">${formatCurrency(pl)}</span>
       </div>
     `;
   }).join("");
@@ -822,14 +802,8 @@ function renderRiskAnalysis() {
   }
 
   riskAnalysisBox.innerHTML = `
-    <p>
-      <strong>Current Risk Score:</strong> ${score}
-    </p>
-
-    <p>
-      ${message}
-    </p>
-
+    <p><strong>Current Risk Score:</strong> ${score}</p>
+    <p>${message}</p>
     <p class="muted">
       This is placeholder logic for now. Later, it can use options Greeks,
       expiration dates, account size, and max-loss rules.
@@ -866,13 +840,9 @@ function handleTradeApproval(status) {
 
   approvalHistory.unshift(record);
 
-  saveToStorage(
-    STORAGE_KEYS.approvals,
-    approvalHistory
-  );
+  saveToStorage(STORAGE_KEYS.approvals, approvalHistory);
 
-  currentPendingIndex =
-    (currentPendingIndex + 1) % pendingTrades.length;
+  currentPendingIndex = (currentPendingIndex + 1) % pendingTrades.length;
 
   renderPendingTrade();
   renderApprovalHistory();
@@ -887,30 +857,20 @@ function renderApprovalHistory() {
 
   if (!approvalHistory.length) {
     approvalHistoryBox.innerHTML = `
-      <p class="muted">
-        No approval history yet.
-      </p>
+      <p class="muted">No approval history yet.</p>
     `;
     return;
   }
 
   approvalHistoryBox.innerHTML = approvalHistory.slice(0, 8).map((item) => {
-    const itemClass =
-      item.status === "Approved" ? "positive" : "negative";
+    const itemClass = item.status === "Approved" ? "positive" : "negative";
 
     return `
       <div class="approval-item">
         <strong>${item.ticker}</strong>
-
         <p>${item.description}</p>
-
-        <p class="${itemClass}">
-          ${item.status}
-        </p>
-
-        <small class="muted">
-          ${item.date}
-        </small>
+        <p class="${itemClass}">${item.status}</p>
+        <small class="muted">${item.date}</small>
       </div>
     `;
   }).join("");
@@ -941,11 +901,7 @@ function saveJournalEntry() {
   };
 
   tradeJournal.unshift(entry);
-
-  saveToStorage(
-    STORAGE_KEYS.journal,
-    tradeJournal
-  );
+  saveToStorage(STORAGE_KEYS.journal, tradeJournal);
 
   tickerInput.value = "";
   strategyInput.value = "";
@@ -963,9 +919,7 @@ function renderJournalEntries() {
 
   if (!tradeJournal.length) {
     journalEntries.innerHTML = `
-      <p class="muted">
-        No journal entries yet.
-      </p>
+      <p class="muted">No journal entries yet.</p>
     `;
     return;
   }
@@ -974,24 +928,11 @@ function renderJournalEntries() {
     return `
       <article class="journal-entry">
         <h4>${entry.ticker}</h4>
-
-        <p>
-          <strong>Strategy:</strong> ${entry.strategy}
-        </p>
-
-        <p>
-          <strong>Result:</strong> ${entry.result}
-        </p>
-
-        <small class="muted">
-          ${entry.date}
-        </small>
-
+        <p><strong>Strategy:</strong> ${entry.strategy}</p>
+        <p><strong>Result:</strong> ${entry.result}</p>
+        <small class="muted">${entry.date}</small>
         <br />
-
-        <button onclick="deleteJournalEntry(${entry.id})">
-          Delete
-        </button>
+        <button onclick="deleteJournalEntry(${entry.id})">Delete</button>
       </article>
     `;
   }).join("");
@@ -1002,11 +943,7 @@ function deleteJournalEntry(id) {
     return entry.id !== id;
   });
 
-  saveToStorage(
-    STORAGE_KEYS.journal,
-    tradeJournal
-  );
-
+  saveToStorage(STORAGE_KEYS.journal, tradeJournal);
   renderJournalEntries();
 }
 
@@ -1026,11 +963,7 @@ function savePortfolioGoal() {
     return;
   }
 
-  saveToStorage(
-    STORAGE_KEYS.goal,
-    goal
-  );
-
+  saveToStorage(STORAGE_KEYS.goal, goal);
   alert(`Portfolio goal saved: ${formatCurrency(goal)}`);
 }
 
@@ -1041,11 +974,7 @@ function renderGoal() {
     return;
   }
 
-  const savedGoal = loadFromStorage(
-    STORAGE_KEYS.goal,
-    ""
-  );
-
+  const savedGoal = loadFromStorage(STORAGE_KEYS.goal, "");
   goalInput.value = savedGoal || "";
 }
 
@@ -1096,7 +1025,7 @@ function enableNotifications() {
 
 function sendTestNotification() {
   if (!("Notification" in window)) {
-    alert("This browser does not support notifications.");
+    alert("Test alert is working.");
     return;
   }
 
@@ -1118,4 +1047,7 @@ function setText(id, value) {
     element.textContent = value;
   }
 }
+
+
+
 
