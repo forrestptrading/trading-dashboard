@@ -1056,4 +1056,87 @@ window.addEventListener("load", () => {
   document.getElementById("openPositions").textContent = "4";
 });
 
+// ===============================
+// EMERGENCY FIX: SIDEBAR + NUMBERS
+// ===============================
+
+const BACKEND_URL =
+  "https://trade-dashboard-api--forrestpbusines.replit.app";
+
+const fallbackPortfolio = {
+  totalValue: 52341.87,
+  dailyChange: 412.34,
+  dailyPercent: 0.79,
+  buyingPower: 3241.56,
+  openPositions: 8,
+  optionsContracts: 14,
+};
+
+function money(value) {
+  return "$" + Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function loadActiveNumbers() {
+  setText("portfolioValue", money(fallbackPortfolio.totalValue));
+  setText("dailyPL", money(fallbackPortfolio.dailyChange));
+  setText("dailyPercent", fallbackPortfolio.dailyPercent + "%");
+  setText("buyingPower", money(fallbackPortfolio.buyingPower));
+  setText("openPositions", fallbackPortfolio.openPositions);
+  setText("optionsContracts", fallbackPortfolio.optionsContracts);
+}
+
+function fixSidebarTabs() {
+  const buttons = document.querySelectorAll(
+    ".sidebar button, .sidebar-link, .nav-link, [data-tab]"
+  );
+
+  const sections = document.querySelectorAll(
+    ".page-section, .dashboard-section, section[data-page], [data-section]"
+  );
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const target =
+        button.dataset.tab ||
+        button.dataset.page ||
+        button.getAttribute("data-target") ||
+        button.textContent.trim().toLowerCase();
+
+      buttons.forEach((b) => b.classList.remove("active"));
+      button.classList.add("active");
+
+      sections.forEach((section) => {
+        const sectionName =
+          section.dataset.page ||
+          section.dataset.section ||
+          section.id ||
+          "";
+
+        const match =
+          sectionName.toLowerCase() === target.toLowerCase() ||
+          sectionName.toLowerCase().includes(target.toLowerCase());
+
+        section.style.display = match ? "block" : "none";
+      });
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadActiveNumbers();
+  fixSidebarTabs();
+});
+
+
+
+
+
 
