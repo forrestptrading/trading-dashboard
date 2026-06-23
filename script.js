@@ -1135,8 +1135,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fixSidebarTabs();
 });
 
-
-
+alert("script is loading");
 
 
 
