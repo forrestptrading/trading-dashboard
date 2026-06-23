@@ -362,9 +362,12 @@ async function fetchQuotes() {
     }
 
     setBackendStatus("Live", true);
+    setText("quoteStatus", "Live");
+    setText("lastQuoteUpdate", new Date().toLocaleTimeString());
   } catch (error) {
     console.error("Quote fetch failed:", error);
     setBackendStatus("Offline", false);
+    setText("quoteStatus", "Offline");
   }
 
   renderQuoteGrid();
