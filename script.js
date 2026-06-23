@@ -1056,7 +1056,7 @@ window.addEventListener("load", () => {
   document.getElementById("openPositions").textContent = "4";
 });
 
-console.log("script loaded");
+
 
 
 
