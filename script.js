@@ -734,12 +734,9 @@ function renderPortfolioSummary() {
     return account.status === "Connected";
   }).length;
 
-  setText("portfolioValue", formatCurrency(totalValue));
-  setText("buyingPower", formatCurrency(buyingPower));
   setText("openPositions", allHoldings.length || 4);
   setText("accountCount", `${connectedCount} accounts connected`);
-  setText("dailyPL", formatCurrency(demoDailyPL));
-  setText("dailyPLPercent", formatPercent(demoDailyPercent));
+  
 }
 
 /* OPTIONS */
