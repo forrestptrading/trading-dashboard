@@ -340,6 +340,29 @@ async function fetchQuotes() {
     return;
   }
 
+  async function fetchPortfolio() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/portfolio`);
+    const result = await response.json();
+
+    if (!result.success || !result.data) {
+      throw new Error("Portfolio response failed");
+    }
+
+    const p = result.data;
+
+    setText("portfolioValue", money(p.total_value));
+    setText("buyingPower", money(p.buying_power));
+    setText("cash", money(p.cash));
+    setText("dailyPL", money(p.day_change));
+    setText("dailyPercent", `${p.day_change_percent}%`);
+
+    setText("portfolioSource", result.source || "mock");
+  } catch (error) {
+    console.error("Portfolio fetch failed:", error);
+  }
+}
+  
   const symbols = watchlist.join(",");
 
   try {
@@ -405,6 +428,7 @@ function addTickerToWatchlist(ticker) {
 
   renderAll();
   fetchQuotes();
+  fetchPortfolio();
 }
 
 function removeTickerFromWatchlist(ticker) {
