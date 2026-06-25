@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
 
 let quotes = {};
 let watchlist = loadFromStorage(STORAGE_KEYS.watchlist, DEFAULT_WATCHLIST);
+let livePortfolio = null;
 
 let connectedAccounts = loadFromStorage(STORAGE_KEYS.connectedAccounts, [
   {
@@ -381,24 +382,17 @@ async function fetchPortfolio() {
       throw new Error("Portfolio response failed");
     }
 
-    const p = result.data;
+    livePortfolio = result.data;
 
-    setText("portfolioValue", formatCurrency(p.total_value));
-    setText("buyingPower", formatCurrency(p.buying_power));
-    setText("cash", formatCurrency(p.cash));
-    setText("dailyPL", formatCurrency(p.day_change));
-    setText("dailyPercent", formatPercent(p.day_change_percent));
-    setText("portfolioSource", result.source || "backend");
+    setBackendStatus("Live", true);
 
-    if (p.day_change < 0) {
-      setClass("dailyPL", "negative");
-      setClass("dailyPercent", "negative");
-    } else {
-      setClass("dailyPL", "positive");
-      setClass("dailyPercent", "positive");
-    }
+    renderPortfolioSummary();
+
   } catch (error) {
     console.error("Portfolio fetch failed:", error);
+
+    livePortfolio = null;
+
     renderPortfolioSummary();
   }
 }
@@ -577,13 +571,23 @@ function getQuotePercent(quote) {
 /* PORTFOLIO SUMMARY */
 
 function renderPortfolioSummary() {
-  const accountTotal = connectedAccounts.reduce((sum, account) => {
-    return sum + Number(account.balance || 0);
-  }, 0);
+  if (livePortfolio) {
+    const p = livePortfolio;
 
-  const accountBuyingPower = connectedAccounts.reduce((sum, account) => {
-    return sum + Number(account.buyingPower || 0);
-  }, 0);
+    setText("portfolioValue", formatCurrency(p.total_value));
+    setText("buyingPower", formatCurrency(p.buying_power));
+    setText("cash", formatCurrency(p.cash));
+    setText("dailyPL", formatCurrency(p.day_change));
+    setText("dailyPercent", formatPercent(p.day_change_percent));
+    setText("openPositions", p.open_positions || 4);
+    setText("accountCount", "1 account connected");
+    setText("portfolioSource", "live");
+
+    setClass("dailyPL", getChangeClass(p.day_change));
+    setClass("dailyPercent", getChangeClass(p.day_change));
+
+    return;
+  }
 
   const demoPortfolioValue = 52341.87;
   const demoBuyingPower = 3241.56;
@@ -591,24 +595,13 @@ function renderPortfolioSummary() {
   const demoDailyPL = 412.34;
   const demoDailyPercent = 0.79;
 
-  const totalValue = accountTotal > 0 ? accountTotal : demoPortfolioValue;
-  const buyingPower = accountBuyingPower > 0 ? accountBuyingPower : demoBuyingPower;
-
-  const allHoldings = connectedAccounts.flatMap((account) => {
-    return account.holdings || [];
-  });
-
-  const connectedCount = connectedAccounts.filter((account) => {
-    return account.status === "Connected";
-  }).length;
-
-  setText("portfolioValue", formatCurrency(totalValue));
-  setText("buyingPower", formatCurrency(buyingPower));
+  setText("portfolioValue", formatCurrency(demoPortfolioValue));
+  setText("buyingPower", formatCurrency(demoBuyingPower));
   setText("cash", formatCurrency(demoCash));
   setText("dailyPL", formatCurrency(demoDailyPL));
   setText("dailyPercent", formatPercent(demoDailyPercent));
-  setText("openPositions", allHoldings.length || 4);
-  setText("accountCount", `${connectedCount} accounts connected`);
+  setText("openPositions", 4);
+  setText("accountCount", "0 accounts connected");
   setText("portfolioSource", "demo");
 
   setClass("dailyPL", getChangeClass(demoDailyPL));
