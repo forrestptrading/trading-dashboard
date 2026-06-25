@@ -14,6 +14,7 @@ let quotes = {};
 let watchlist = loadFromStorage(STORAGE_KEYS.watchlist, DEFAULT_WATCHLIST);
 let livePortfolio = null;
 let aiOptionAlerts = [];
+let aiCommandCenter = null;
 
 let connectedAccounts = loadFromStorage(STORAGE_KEYS.connectedAccounts, [
   {
@@ -120,11 +121,11 @@ document.addEventListener("DOMContentLoaded", () => {
   checkBackendHealth();
   fetchQuotes();
   fetchPortfolio();
-  fetchAiOptionAlerts();
+  fetchAiCommandCenter();
 
   setInterval(fetchQuotes, 30000);
   setInterval(fetchPortfolio, 30000);
-  setInterval(fetchAiOptionAlerts, 30000);
+  setInterval(fetchAiCommandCenter, 30000);
 });
 
 /* STORAGE */
