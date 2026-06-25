@@ -340,7 +340,39 @@ async function fetchQuotes() {
     return;
   }
 
-  async function fetchPortfolio() {
+  try {
+    setText("quoteStatus", "Loading...");
+
+    const symbols = watchlist.join(",");
+    const response = await fetch(`${BACKEND_URL}/api/quotes?symbols=${symbols}`);
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error("Quote response failed");
+    }
+
+    const quotes = result.data || result.quotes || [];
+
+    quotes.forEach((quote) => {
+      liveQuotes[quote.symbol] = quote;
+    });
+
+    setText("quoteStatus", `Live (${result.source || "backend"})`);
+    setText("lastQuoteUpdate", new Date().toLocaleTimeString());
+
+    renderQuoteGrid();
+    renderWatchlistTable();
+  } catch (error) {
+    console.error("Quote fetch failed:", error);
+    setText("quoteStatus", "Quotes failed");
+    renderQuoteGrid();
+    renderWatchlistTable();
+  }
+}
+
+/* LIVE PORTFOLIO */
+
+async function fetchPortfolio() {
   try {
     const response = await fetch(`${BACKEND_URL}/api/portfolio`);
     const result = await response.json();
@@ -356,13 +388,12 @@ async function fetchQuotes() {
     setText("cash", money(p.cash));
     setText("dailyPL", money(p.day_change));
     setText("dailyPercent", `${p.day_change_percent}%`);
-
     setText("portfolioSource", result.source || "mock");
   } catch (error) {
     console.error("Portfolio fetch failed:", error);
   }
 }
-  
+
   const symbols = watchlist.join(",");
 
   try {
