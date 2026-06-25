@@ -351,12 +351,14 @@ async function fetchQuotes() {
       throw new Error("Quote response failed");
     }
 
-    const quotes = result.data || result.quotes || [];
+    const quoteList = result.data || result.quotes || [];
 
-    quotes.forEach((quote) => {
-      liveQuotes[quote.symbol] = quote;
-    });
+quotes = {};
 
+quoteList.forEach((quote) => {
+  quotes[quote.symbol] = quote;
+});
+    
     setText("quoteStatus", `Live (${result.source || "backend"})`);
     setText("lastQuoteUpdate", new Date().toLocaleTimeString());
 
