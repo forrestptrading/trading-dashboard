@@ -1092,6 +1092,119 @@ function sendTestNotification() {
   }
 }
 
+/* AI COMMAND CENTER */
+
+async function fetchAiCommandCenter() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/ai/command-center`);
+    const result = await response.json();
+
+    if (!result.success || !result.data) {
+      throw new Error("AI command center failed");
+    }
+
+    aiCommandCenter = result.data;
+    renderAiCommandCenter();
+  } catch (error) {
+    console.error("AI command center failed:", error);
+    aiCommandCenter = null;
+    renderAiCommandCenter();
+  }
+}
+
+function renderAiCommandCenter() {
+  const summaryBox = document.getElementById("aiCommandSummary");
+  const alertsBox = document.getElementById("aiCommandAlerts");
+
+  if (!summaryBox || !alertsBox) {
+    return;
+  }
+
+  if (!aiCommandCenter) {
+    setText("aiConfidenceScore", "--");
+    setText("aiMarketBias", "Offline");
+
+    summaryBox.textContent = "AI Command Center is unavailable.";
+
+    alertsBox.innerHTML = `
+      <p class="muted">No AI alerts available.</p>
+    `;
+
+    return;
+  }
+
+  setText("aiConfidenceScore", `${aiCommandCenter.confidence_score}%`);
+  setText("aiMarketBias", aiCommandCenter.market_bias || "Neutral");
+
+  summaryBox.textContent = aiCommandCenter.summary || "AI monitoring active.";
+
+  const alerts = aiCommandCenter.alerts || [];
+
+  if (!alerts.length) {
+    alertsBox.innerHTML = `
+      <p class="muted">No AI alerts available.</p>
+    `;
+    return;
+  }
+
+  alertsBox.innerHTML = alerts.map((alert, index) => {
+    const isOption = alert.type === "CALL" || alert.type === "PUT";
+
+    const title = isOption
+      ? `${alert.ticker} ${alert.type} $${alert.strike}`
+      : `${alert.ticker} ${alert.category}`;
+
+    return `
+      <article class="approval-item">
+        <strong>${title}</strong>
+
+        <p>Category: ${alert.category}</p>
+        <p>Confidence: <strong>${alert.confidence}%</strong></p>
+        <p>Risk: <strong>${alert.risk}</strong></p>
+
+        <p class="muted">${alert.reason}</p>
+
+        <button onclick="addCommandAlertToApprovalQueue(${index})">
+          Add to Approval Queue
+        </button>
+      </article>
+    `;
+  }).join("");
+}
+
+function addCommandAlertToApprovalQueue(index) {
+  if (!aiCommandCenter || !aiCommandCenter.alerts) {
+    return;
+  }
+
+  const alert = aiCommandCenter.alerts[index];
+
+  if (!alert) {
+    return;
+  }
+
+  const isOption = alert.type === "CALL" || alert.type === "PUT";
+
+  const tradeDescription = isOption
+    ? `${alert.type} $${alert.strike} exp ${alert.expiration}. ${alert.reason}`
+    : `${alert.category}. ${alert.reason}`;
+
+  pendingTrades.unshift({
+    ticker: alert.ticker,
+    description: tradeDescription
+  });
+
+  currentPendingIndex = 0;
+  renderPendingTrade();
+
+  window.alert(`${alert.ticker} added to approval queue.`);
+}
+
+
+
+
+
+
 
 
 
