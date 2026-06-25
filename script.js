@@ -11,66 +11,54 @@ const STORAGE_KEYS = {
 };
 
 let quotes = {};
-let watchlist = loadFromStorage(
-  STORAGE_KEYS.watchlist,
-  DEFAULT_WATCHLIST
-);
+let watchlist = loadFromStorage(STORAGE_KEYS.watchlist, DEFAULT_WATCHLIST);
 
-let connectedAccounts = loadFromStorage(
-  STORAGE_KEYS.connectedAccounts,
-  [
-    {
-      id: "robinhood",
-      name: "Robinhood",
-      status: "Not Connected",
-      balance: 0,
-      buyingPower: 0,
-      holdings: []
-    },
-    {
-      id: "sofi",
-      name: "SoFi",
-      status: "Not Connected",
-      balance: 0,
-      buyingPower: 0,
-      holdings: []
-    },
-    {
-      id: "fidelity",
-      name: "Fidelity",
-      status: "Not Connected",
-      balance: 0,
-      buyingPower: 0,
-      holdings: []
-    },
-    {
-      id: "schwab",
-      name: "Charles Schwab",
-      status: "Not Connected",
-      balance: 0,
-      buyingPower: 0,
-      holdings: []
-    },
-    {
-      id: "webull",
-      name: "Webull",
-      status: "Not Connected",
-      balance: 0,
-      buyingPower: 0,
-      holdings: []
-    }
-  ]
-);
+let connectedAccounts = loadFromStorage(STORAGE_KEYS.connectedAccounts, [
+  {
+    id: "robinhood",
+    name: "Robinhood",
+    status: "Not Connected",
+    balance: 0,
+    buyingPower: 0,
+    holdings: []
+  },
+  {
+    id: "sofi",
+    name: "SoFi",
+    status: "Not Connected",
+    balance: 0,
+    buyingPower: 0,
+    holdings: []
+  },
+  {
+    id: "fidelity",
+    name: "Fidelity",
+    status: "Not Connected",
+    balance: 0,
+    buyingPower: 0,
+    holdings: []
+  },
+  {
+    id: "schwab",
+    name: "Charles Schwab",
+    status: "Not Connected",
+    balance: 0,
+    buyingPower: 0,
+    holdings: []
+  },
+  {
+    id: "webull",
+    name: "Webull",
+    status: "Not Connected",
+    balance: 0,
+    buyingPower: 0,
+    holdings: []
+  }
+]);
 
-let tradeJournal = loadFromStorage(
-  STORAGE_KEYS.journal,
-  []
-);
-
-let approvalHistory = loadFromStorage(
-  STORAGE_KEYS.approvals,
-  []
-);
+let tradeJournal = loadFromStorage(STORAGE_KEYS.journal, []);
+let approvalHistory = loadFromStorage(STORAGE_KEYS.approvals, []);
+let currentPendingIndex = 0;
 
 const sampleOptions = [
   {
@@ -121,8 +109,6 @@ const pendingTrades = [
   }
 ];
 
-let currentPendingIndex = 0;
-
 document.addEventListener("DOMContentLoaded", () => {
   setupNavigation();
   setupForms();
@@ -131,8 +117,10 @@ document.addEventListener("DOMContentLoaded", () => {
   renderAll();
   checkBackendHealth();
   fetchQuotes();
+  fetchPortfolio();
 
-  setInterval(fetchQuotes, 60000);
+  setInterval(fetchQuotes, 30000);
+  setInterval(fetchPortfolio, 30000);
 });
 
 /* STORAGE */
@@ -140,12 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function loadFromStorage(key, fallback) {
   try {
     const stored = localStorage.getItem(key);
-
-    if (!stored) {
-      return fallback;
-    }
-
-    return JSON.parse(stored);
+    return stored ? JSON.parse(stored) : fallback;
   } catch (error) {
     console.error("Storage load failed:", error);
     return fallback;
@@ -154,10 +137,7 @@ function loadFromStorage(key, fallback) {
 
 function saveToStorage(key, value) {
   try {
-    localStorage.setItem(
-      key,
-      JSON.stringify(value)
-    );
+    localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
     console.error("Storage save failed:", error);
   }
@@ -174,14 +154,17 @@ function formatCurrency(value) {
   });
 }
 
+function money(value) {
+  return formatCurrency(value);
+}
+
 function formatPercent(value) {
   const number = Number(value) || 0;
-
   return `${number.toFixed(2)}%`;
 }
 
 function normalizeTicker(ticker) {
-  return ticker
+  return String(ticker || "")
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9.-]/g, "");
@@ -189,6 +172,14 @@ function normalizeTicker(ticker) {
 
 function getChangeClass(value) {
   return Number(value) >= 0 ? "positive" : "negative";
+}
+
+function setText(id, value) {
+  const element = document.getElementById(id);
+
+  if (element) {
+    element.textContent = value;
+  }
 }
 
 /* NAVIGATION */
@@ -277,6 +268,7 @@ function setupButtons() {
   if (refreshQuotesBtn) {
     refreshQuotesBtn.addEventListener("click", () => {
       fetchQuotes();
+      fetchPortfolio();
     });
   }
 
@@ -312,9 +304,7 @@ function setupButtons() {
     });
   }
 
-  const enableNotificationsBtn = document.getElementById(
-    "enableNotificationsBtn"
-  );
+  const enableNotificationsBtn = document.getElementById("enableNotificationsBtn");
 
   if (enableNotificationsBtn) {
     enableNotificationsBtn.addEventListener("click", () => {
@@ -333,9 +323,6 @@ function setupButtons() {
 
 /* LIVE QUOTES */
 
-
-/* LIVE PORTFOLIO */
-
 async function fetchQuotes() {
   if (!watchlist.length) {
     renderQuoteGrid();
@@ -347,10 +334,7 @@ async function fetchQuotes() {
     setText("quoteStatus", "Loading...");
 
     const symbols = watchlist.join(",");
-    const response = await fetch(
-      `${BACKEND_URL}/api/quotes?symbols=${symbols}`
-    );
-
+    const response = await fetch(`${BACKEND_URL}/api/quotes?symbols=${symbols}`);
     const result = await response.json();
 
     if (!result.success) {
@@ -362,10 +346,10 @@ async function fetchQuotes() {
     quotes = {};
 
     quoteList.forEach((quote) => {
-      const symbol = quote.symbol || quote.ticker;
+      const symbol = normalizeTicker(quote.symbol || quote.ticker);
 
       if (symbol) {
-        quotes[symbol.toUpperCase()] = quote;
+        quotes[symbol] = quote;
       }
     });
 
@@ -386,6 +370,8 @@ async function fetchQuotes() {
   }
 }
 
+/* LIVE PORTFOLIO */
+
 async function fetchPortfolio() {
   try {
     const response = await fetch(`${BACKEND_URL}/api/portfolio`);
@@ -397,67 +383,35 @@ async function fetchPortfolio() {
 
     const p = result.data;
 
-    setText("portfolioValue", money(p.total_value));
-    setText("buyingPower", money(p.buying_power));
-    setText("cash", money(p.cash));
-    setText("dailyPL", money(p.day_change));
-    setText("dailyPercent", `${p.day_change_percent}%`);
-    setText("portfolioSource", result.source || "mock");
+    setText("portfolioValue", formatCurrency(p.total_value));
+    setText("buyingPower", formatCurrency(p.buying_power));
+    setText("cash", formatCurrency(p.cash));
+    setText("dailyPL", formatCurrency(p.day_change));
+    setText("dailyPercent", formatPercent(p.day_change_percent));
+    setText("portfolioSource", result.source || "backend");
+
+    if (p.day_change < 0) {
+      setClass("dailyPL", "negative");
+      setClass("dailyPercent", "negative");
+    } else {
+      setClass("dailyPL", "positive");
+      setClass("dailyPercent", "positive");
+    }
   } catch (error) {
     console.error("Portfolio fetch failed:", error);
+    renderPortfolioSummary();
   }
 }
 
-  const symbols = watchlist.join(",");
+function setClass(id, className) {
+  const element = document.getElementById(id);
 
-  try {
-    const response = await fetch(
-      `${BACKEND_URL}/api/quotes?symbols=${symbols}`
-    );
-
-    if (!response.ok) {
-      throw new Error("Quote request failed");
-    }
-
-    const data = await response.json();
-
-    if (data.quotes) {
-      quotes = data.quotes;
-    } else if (Array.isArray(data)) {
-      quotes = convertQuoteArrayToObject(data);
-    } else {
-      quotes = {};
-    }
-
-    setBackendStatus("Live", true);
-    setText("quoteStatus", "Live");
-    setText("lastQuoteUpdate", new Date().toLocaleTimeString());
-  } catch (error) {
-    console.error("Quote fetch failed:", error);
-    setBackendStatus("Offline", false);
-    setText("quoteStatus", "Offline");
+  if (element) {
+    element.className = className;
   }
-
-  renderQuoteGrid();
-  renderWatchlistTable();
-  renderPortfolioSummary();
 }
 
-function convertQuoteArrayToObject(data) {
-  const output = {};
-
-  data.forEach((item) => {
-    const symbol = item.symbol || item.ticker;
-
-    if (!symbol) {
-      return;
-    }
-
-    output[symbol.toUpperCase()] = item;
-  });
-
-  return output;
-}
+/* WATCHLIST */
 
 function addTickerToWatchlist(ticker) {
   if (watchlist.includes(ticker)) {
@@ -465,26 +419,17 @@ function addTickerToWatchlist(ticker) {
   }
 
   watchlist.push(ticker);
-
-  saveToStorage(
-    STORAGE_KEYS.watchlist,
-    watchlist
-  );
+  saveToStorage(STORAGE_KEYS.watchlist, watchlist);
 
   renderAll();
   fetchQuotes();
-  fetchPortfolio();
 }
 
 function removeTickerFromWatchlist(ticker) {
   watchlist = watchlist.filter((item) => item !== ticker);
-
   delete quotes[ticker];
 
-  saveToStorage(
-    STORAGE_KEYS.watchlist,
-    watchlist
-  );
+  saveToStorage(STORAGE_KEYS.watchlist, watchlist);
 
   renderAll();
   fetchQuotes();
@@ -536,7 +481,6 @@ function renderQuoteGrid() {
       <article class="quote-card">
         <div class="quote-card-header">
           <h4>${ticker}</h4>
-
           <button onclick="removeTickerFromWatchlist('${ticker}')">
             Remove
           </button>
@@ -602,7 +546,7 @@ function renderWatchlistTable() {
 }
 
 function getQuotePrice(quote) {
-  return (
+  return Number(
     quote.price ||
     quote.last_price ||
     quote.mark_price ||
@@ -613,7 +557,7 @@ function getQuotePrice(quote) {
 }
 
 function getQuoteChange(quote) {
-  return (
+  return Number(
     quote.change ||
     quote.price_change ||
     quote.regularMarketChange ||
@@ -622,12 +566,53 @@ function getQuoteChange(quote) {
 }
 
 function getQuotePercent(quote) {
-  return (
+  return Number(
     quote.changePercent ||
     quote.change_percent ||
     quote.regularMarketChangePercent ||
     0
   );
+}
+
+/* PORTFOLIO SUMMARY */
+
+function renderPortfolioSummary() {
+  const accountTotal = connectedAccounts.reduce((sum, account) => {
+    return sum + Number(account.balance || 0);
+  }, 0);
+
+  const accountBuyingPower = connectedAccounts.reduce((sum, account) => {
+    return sum + Number(account.buyingPower || 0);
+  }, 0);
+
+  const demoPortfolioValue = 52341.87;
+  const demoBuyingPower = 3241.56;
+  const demoCash = 3241.56;
+  const demoDailyPL = 412.34;
+  const demoDailyPercent = 0.79;
+
+  const totalValue = accountTotal > 0 ? accountTotal : demoPortfolioValue;
+  const buyingPower = accountBuyingPower > 0 ? accountBuyingPower : demoBuyingPower;
+
+  const allHoldings = connectedAccounts.flatMap((account) => {
+    return account.holdings || [];
+  });
+
+  const connectedCount = connectedAccounts.filter((account) => {
+    return account.status === "Connected";
+  }).length;
+
+  setText("portfolioValue", formatCurrency(totalValue));
+  setText("buyingPower", formatCurrency(buyingPower));
+  setText("cash", formatCurrency(demoCash));
+  setText("dailyPL", formatCurrency(demoDailyPL));
+  setText("dailyPercent", formatPercent(demoDailyPercent));
+  setText("openPositions", allHoldings.length || 4);
+  setText("accountCount", `${connectedCount} accounts connected`);
+  setText("portfolioSource", "demo");
+
+  setClass("dailyPL", getChangeClass(demoDailyPL));
+  setClass("dailyPercent", getChangeClass(demoDailyPL));
 }
 
 /* ACCOUNTS */
@@ -703,15 +688,11 @@ function connectBroker(accountId) {
     return;
   }
 
-  alert(
-    `${account.name} connection is ready for the Plaid backend step.`
-  );
+  alert(`${account.name} connection is ready for the Plaid backend step.`);
 }
 
 function showPlaidPlaceholder() {
-  alert(
-    "Plaid Link comes next. This button will open the secure account sign-in window."
-  );
+  alert("Plaid Link comes next. This button will open the secure account sign-in window.");
 }
 
 /* HOLDINGS */
@@ -724,7 +705,7 @@ function renderHoldingsTable() {
   }
 
   const allHoldings = connectedAccounts.flatMap((account) => {
-    return account.holdings.map((holding) => ({
+    return (account.holdings || []).map((holding) => ({
       ...holding,
       accountName: account.name
     }));
@@ -750,38 +731,6 @@ function renderHoldingsTable() {
       </div>
     `;
   }).join("");
-}
-
-/* PORTFOLIO SUMMARY */
-
-function renderPortfolioSummary() {
-  const accountTotal = connectedAccounts.reduce((sum, account) => {
-    return sum + Number(account.balance || 0);
-  }, 0);
-
-  const accountBuyingPower = connectedAccounts.reduce((sum, account) => {
-    return sum + Number(account.buyingPower || 0);
-  }, 0);
-
-  const demoPortfolioValue = 52341.87;
-  const demoBuyingPower = 3241.56;
-  const demoDailyPL = 412.34;
-  const demoDailyPercent = 0.79;
-
-  const totalValue = accountTotal > 0 ? accountTotal : demoPortfolioValue;
-  const buyingPower = accountBuyingPower > 0 ? accountBuyingPower : demoBuyingPower;
-
-  const allHoldings = connectedAccounts.flatMap((account) => {
-    return account.holdings || [];
-  });
-
-  const connectedCount = connectedAccounts.filter((account) => {
-    return account.status === "Connected";
-  }).length;
-
-  setText("openPositions", allHoldings.length || 4);
-  setText("accountCount", `${connectedCount} accounts connected`);
-  
 }
 
 /* OPTIONS */
@@ -908,7 +857,6 @@ function handleTradeApproval(status) {
   };
 
   approvalHistory.unshift(record);
-
   saveToStorage(STORAGE_KEYS.approvals, approvalHistory);
 
   currentPendingIndex = (currentPendingIndex + 1) % pendingTrades.length;
@@ -951,6 +899,10 @@ function saveJournalEntry() {
   const tickerInput = document.getElementById("journalTicker");
   const strategyInput = document.getElementById("journalStrategy");
   const resultInput = document.getElementById("journalResult");
+
+  if (!tickerInput || !strategyInput || !resultInput) {
+    return;
+  }
 
   const ticker = normalizeTicker(tickerInput.value);
   const strategy = strategyInput.value.trim();
@@ -1061,6 +1013,7 @@ async function checkBackendHealth() {
     setText("backendHealthStatus", "Backend is live.");
   } catch (error) {
     console.error("Backend health check failed:", error);
+
     setBackendStatus("Offline", false);
     setText("backendHealthStatus", "Backend is offline or blocked.");
   }
@@ -1106,30 +1059,6 @@ function sendTestNotification() {
     alert("Enable notifications first.");
   }
 }
-
-/* HELPERS */
-
-function setText(id, value) {
-  const element = document.getElementById(id);
-
-  if (element) {
-    element.textContent = value;
-  }
-}
-
-window.addEventListener("load", () => {
-  document.getElementById("portfolioValue").textContent = "$52,341.87";
-  document.getElementById("buyingPower").textContent = "$3,241.56";
-  document.getElementById("dailyPL").textContent = "$412.34";
-  document.getElementById("dailyPercent").textContent = "0.79%";
-  document.getElementById("openPositions").textContent = "4";
-});
-
-
-
-
-
-
 
 
 
