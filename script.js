@@ -1097,8 +1097,10 @@ function sendTestNotification() {
 async function fetchAiCommandCenter() {
   try {
     const response = await fetch(`${BACKEND_URL}/api/ai/command-center`);
+    console.log(response.status);
     const result = await response.json();
-
+    console.log("AI COMMAND:", result);
+    
     if (!result.success || !result.data) {
       throw new Error("AI command center failed");
     }
