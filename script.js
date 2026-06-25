@@ -388,6 +388,7 @@ async function fetchPortfolio() {
 
     renderPortfolioSummary();
     renderHoldingsTable();
+    renderAccountsList();
 
   } catch (error) {
     console.error("Portfolio fetch failed:", error);
@@ -396,6 +397,7 @@ async function fetchPortfolio() {
 
     renderPortfolioSummary();
     renderHoldingsTable();
+    renderAccountsList();
   }
 }
 
@@ -616,6 +618,32 @@ function renderAccountsList() {
   const accountsList = document.getElementById("accountsList");
 
   if (!accountsList) {
+    return;
+  }
+
+  if (livePortfolio) {
+    accountsList.innerHTML = `
+      <article class="account-card">
+        <h4>${livePortfolio.account_name || "Robinhood"}</h4>
+
+        <span class="status-pill status-connected">
+          Connected
+        </span>
+
+        <p>
+          Balance: <strong>${formatCurrency(livePortfolio.total_value)}</strong>
+        </p>
+
+        <p>
+          Buying Power: <strong>${formatCurrency(livePortfolio.buying_power)}</strong>
+        </p>
+
+        <p>
+          Cash: <strong>${formatCurrency(livePortfolio.cash)}</strong>
+        </p>
+      </article>
+    `;
+
     return;
   }
 
