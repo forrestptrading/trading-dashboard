@@ -387,6 +387,7 @@ async function fetchPortfolio() {
     setBackendStatus("Live", true);
 
     renderPortfolioSummary();
+    renderHoldingsTable();
 
   } catch (error) {
     console.error("Portfolio fetch failed:", error);
@@ -394,6 +395,7 @@ async function fetchPortfolio() {
     livePortfolio = null;
 
     renderPortfolioSummary();
+    renderHoldingsTable();
   }
 }
 
@@ -697,33 +699,38 @@ function renderHoldingsTable() {
     return;
   }
 
-  const allHoldings = connectedAccounts.flatMap((account) => {
-    return (account.holdings || []).map((holding) => ({
-      ...holding,
-      accountName: account.name
-    }));
-  });
+  const liveHoldings =
+    livePortfolio?.holdings ||
+    livePortfolio?.positions ||
+    livePortfolio?.securities ||
+    [];
 
-  if (!allHoldings.length) {
-    holdingsTable.innerHTML = `
-      <p class="muted">
-        No connected holdings yet. Once Plaid is wired in, your positions
-        from each brokerage will appear here.
-      </p>
-    `;
+  if (liveHoldings.length) {
+    holdingsTable.innerHTML = liveHoldings.map((holding) => {
+      const symbol = holding.symbol || holding.ticker || holding.instrument || "Unknown";
+      const quantity = holding.quantity || holding.shares || holding.qty || 0;
+      const value = holding.value || holding.market_value || holding.equity || 0;
+      const accountName = holding.account || holding.account_name || "Robinhood";
+
+      return `
+        <div class="table-row">
+          <strong>${symbol}</strong>
+          <span>${accountName}</span>
+          <span>${quantity} shares</span>
+          <span>${formatCurrency(value)}</span>
+        </div>
+      `;
+    }).join("");
+
     return;
   }
 
-  holdingsTable.innerHTML = allHoldings.map((holding) => {
-    return `
-      <div class="table-row">
-        <strong>${holding.symbol}</strong>
-        <span>${holding.accountName}</span>
-        <span>${holding.quantity} shares</span>
-        <span>${formatCurrency(holding.value)}</span>
-      </div>
-    `;
-  }).join("");
+  holdingsTable.innerHTML = `
+    <p class="muted">
+      No live holdings found yet. Portfolio totals are connected, but the backend
+      is not sending holdings/positions data yet.
+    </p>
+  `;
 }
 
 /* OPTIONS */
