@@ -333,6 +333,9 @@ function setupButtons() {
 
 /* LIVE QUOTES */
 
+
+/* LIVE PORTFOLIO */
+
 async function fetchQuotes() {
   if (!watchlist.length) {
     renderQuoteGrid();
@@ -344,7 +347,10 @@ async function fetchQuotes() {
     setText("quoteStatus", "Loading...");
 
     const symbols = watchlist.join(",");
-    const response = await fetch(`${BACKEND_URL}/api/quotes?symbols=${symbols}`);
+    const response = await fetch(
+      `${BACKEND_URL}/api/quotes?symbols=${symbols}`
+    );
+
     const result = await response.json();
 
     if (!result.success) {
@@ -353,12 +359,17 @@ async function fetchQuotes() {
 
     const quoteList = result.data || result.quotes || [];
 
-quotes = {};
+    quotes = {};
 
-quoteList.forEach((quote) => {
-  quotes[quote.symbol] = quote;
-});
-    
+    quoteList.forEach((quote) => {
+      const symbol = quote.symbol || quote.ticker;
+
+      if (symbol) {
+        quotes[symbol.toUpperCase()] = quote;
+      }
+    });
+
+    setBackendStatus("Live", true);
     setText("quoteStatus", `Live (${result.source || "backend"})`);
     setText("lastQuoteUpdate", new Date().toLocaleTimeString());
 
@@ -366,13 +377,14 @@ quoteList.forEach((quote) => {
     renderWatchlistTable();
   } catch (error) {
     console.error("Quote fetch failed:", error);
+
+    setBackendStatus("Offline", false);
     setText("quoteStatus", "Quotes failed");
+
     renderQuoteGrid();
     renderWatchlistTable();
   }
 }
-
-/* LIVE PORTFOLIO */
 
 async function fetchPortfolio() {
   try {
