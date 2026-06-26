@@ -4,7 +4,6 @@ const DEFAULT_WATCHLIST = ["AAPL", "TSLA", "NVDA", "SPY", "QQQ"];
 
 const STORAGE_KEYS = {
   watchlist: "fp_watchlist",
-  connectedAccounts: "fp_connected_accounts",
   journal: "fp_trade_journal",
   approvals: "fp_trade_approvals",
   goal: "fp_portfolio_goal"
@@ -13,55 +12,18 @@ const STORAGE_KEYS = {
 let quotes = {};
 let watchlist = loadFromStorage(STORAGE_KEYS.watchlist, DEFAULT_WATCHLIST);
 let livePortfolio = null;
-let aiOptionAlerts = [];
 let aiCommandCenter = null;
-
-let connectedAccounts = loadFromStorage(STORAGE_KEYS.connectedAccounts, [
-  {
-    id: "robinhood",
-    name: "Robinhood",
-    status: "Not Connected",
-    balance: 0,
-    buyingPower: 0,
-    holdings: []
-  },
-  {
-    id: "sofi",
-    name: "SoFi",
-    status: "Not Connected",
-    balance: 0,
-    buyingPower: 0,
-    holdings: []
-  },
-  {
-    id: "fidelity",
-    name: "Fidelity",
-    status: "Not Connected",
-    balance: 0,
-    buyingPower: 0,
-    holdings: []
-  },
-  {
-    id: "schwab",
-    name: "Charles Schwab",
-    status: "Not Connected",
-    balance: 0,
-    buyingPower: 0,
-    holdings: []
-  },
-  {
-    id: "webull",
-    name: "Webull",
-    status: "Not Connected",
-    balance: 0,
-    buyingPower: 0,
-    holdings: []
-  }
-]);
-
 let tradeJournal = loadFromStorage(STORAGE_KEYS.journal, []);
 let approvalHistory = loadFromStorage(STORAGE_KEYS.approvals, []);
 let currentPendingIndex = 0;
+
+const brokers = [
+  { id: "robinhood", name: "Robinhood" },
+  { id: "sofi", name: "SoFi" },
+  { id: "fidelity", name: "Fidelity" },
+  { id: "schwab", name: "Charles Schwab" },
+  { id: "webull", name: "Webull" }
+];
 
 const sampleOptions = [
   {
@@ -118,6 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupButtons();
 
   renderAll();
+
   checkBackendHealth();
   fetchQuotes();
   fetchPortfolio();
@@ -134,8 +97,7 @@ function loadFromStorage(key, fallback) {
   try {
     const stored = localStorage.getItem(key);
     return stored ? JSON.parse(stored) : fallback;
-  } catch (error) {
-    console.error("Storage load failed:", error);
+  } catch {
     return fallback;
   }
 }
@@ -148,7 +110,17 @@ function saveToStorage(key, value) {
   }
 }
 
-/* FORMATTERS */
+/* HELPERS */
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function setClass(id, className) {
+  const el = document.getElementById(id);
+  if (el) el.className = className;
+}
 
 function formatCurrency(value) {
   const number = Number(value) || 0;
@@ -179,12 +151,8 @@ function getChangeClass(value) {
   return Number(value) >= 0 ? "positive" : "negative";
 }
 
-function setText(id, value) {
-  const element = document.getElementById(id);
-
-  if (element) {
-    element.textContent = value;
-  }
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
 }
 
 /* NAVIGATION */
@@ -195,23 +163,15 @@ function setupNavigation() {
 
   navButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      const targetSection = button.dataset.section;
+      const target = button.dataset.section;
 
-      navButtons.forEach((btn) => {
-        btn.classList.remove("active");
-      });
-
-      sections.forEach((section) => {
-        section.classList.remove("active-section");
-      });
+      navButtons.forEach((btn) => btn.classList.remove("active"));
+      sections.forEach((section) => section.classList.remove("active-section"));
 
       button.classList.add("active");
 
-      const sectionToShow = document.getElementById(targetSection);
-
-      if (sectionToShow) {
-        sectionToShow.classList.add("active-section");
-      }
+      const section = document.getElementById(target);
+      if (section) section.classList.add("active-section");
     });
   });
 }
@@ -227,10 +187,7 @@ function setupForms() {
       event.preventDefault();
 
       const ticker = normalizeTicker(tickerInput.value);
-
-      if (!ticker) {
-        return;
-      }
+      if (!ticker) return;
 
       addTickerToWatchlist(ticker);
       tickerInput.value = "";
@@ -245,10 +202,7 @@ function setupForms() {
       event.preventDefault();
 
       const ticker = normalizeTicker(watchlistInput.value);
-
-      if (!ticker) {
-        return;
-      }
+      if (!ticker) return;
 
       addTickerToWatchlist(ticker);
       watchlistInput.value = "";
@@ -274,15 +228,14 @@ function setupButtons() {
     refreshQuotesBtn.addEventListener("click", () => {
       fetchQuotes();
       fetchPortfolio();
+      fetchAiCommandCenter();
     });
   }
 
   const connectPlaidBtn = document.getElementById("connectPlaidBtn");
 
   if (connectPlaidBtn) {
-    connectPlaidBtn.addEventListener("click", () => {
-      showPlaidPlaceholder();
-    });
+    connectPlaidBtn.addEventListener("click", showPlaidPlaceholder);
   }
 
   const approveTradeBtn = document.getElementById("approveTradeBtn");
@@ -304,29 +257,69 @@ function setupButtons() {
   const saveGoalBtn = document.getElementById("saveGoalBtn");
 
   if (saveGoalBtn) {
-    saveGoalBtn.addEventListener("click", () => {
-      savePortfolioGoal();
-    });
+    saveGoalBtn.addEventListener("click", savePortfolioGoal);
   }
 
   const enableNotificationsBtn = document.getElementById("enableNotificationsBtn");
 
   if (enableNotificationsBtn) {
-    enableNotificationsBtn.addEventListener("click", () => {
-      enableNotifications();
-    });
+    enableNotificationsBtn.addEventListener("click", enableNotifications);
   }
 
   const testNotificationBtn = document.getElementById("testNotificationBtn");
 
   if (testNotificationBtn) {
-    testNotificationBtn.addEventListener("click", () => {
-      sendTestNotification();
-    });
+    testNotificationBtn.addEventListener("click", sendTestNotification);
   }
 }
 
-/* LIVE QUOTES */
+/* MAIN RENDER */
+
+function renderAll() {
+  renderPortfolioSummary();
+  renderQuoteGrid();
+  renderWatchlistTable();
+  renderAccountsList();
+  renderBrokerCards();
+  renderHoldingsTable();
+  renderOptions();
+  renderRiskAnalysis();
+  renderPendingTrade();
+  renderApprovalHistory();
+  renderJournalEntries();
+  renderGoal();
+  renderAiCommandCenter();
+}
+
+/* BACKEND */
+
+async function checkBackendHealth() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/quotes?symbols=AAPL`);
+
+    if (!response.ok) {
+      throw new Error("Backend health failed");
+    }
+
+    setBackendStatus("Live", true);
+    setText("backendHealthStatus", "Backend is live.");
+  } catch (error) {
+    console.error("Backend health check failed:", error);
+    setBackendStatus("Offline", false);
+    setText("backendHealthStatus", "Backend is offline or blocked.");
+  }
+}
+
+function setBackendStatus(status, isLive) {
+  const backendStatus = document.getElementById("backendStatus");
+
+  if (backendStatus) {
+    backendStatus.textContent = status;
+    backendStatus.className = isLive ? "positive" : "negative";
+  }
+}
+
+/* QUOTES */
 
 async function fetchQuotes() {
   if (!watchlist.length) {
@@ -364,6 +357,7 @@ async function fetchQuotes() {
 
     renderQuoteGrid();
     renderWatchlistTable();
+    renderHoldingsTable();
   } catch (error) {
     console.error("Quote fetch failed:", error);
 
@@ -375,7 +369,36 @@ async function fetchQuotes() {
   }
 }
 
-/* LIVE PORTFOLIO */
+function getQuotePrice(quote) {
+  return Number(
+    quote?.price ||
+    quote?.last_price ||
+    quote?.mark_price ||
+    quote?.lastTradePrice ||
+    quote?.regularMarketPrice ||
+    0
+  );
+}
+
+function getQuoteChange(quote) {
+  return Number(
+    quote?.change ||
+    quote?.price_change ||
+    quote?.regularMarketChange ||
+    0
+  );
+}
+
+function getQuotePercent(quote) {
+  return Number(
+    quote?.changePercent ||
+    quote?.change_percent ||
+    quote?.regularMarketChangePercent ||
+    0
+  );
+}
+
+/* PORTFOLIO */
 
 async function fetchPortfolio() {
   try {
@@ -389,235 +412,95 @@ async function fetchPortfolio() {
     livePortfolio = result.data;
 
     console.log("LIVE PORTFOLIO DATA:", livePortfolio);
-console.log("LIVE HOLDINGS:", livePortfolio.holdings || livePortfolio.positions);
-    
+    console.log("LIVE HOLDINGS:", getLiveHoldings());
 
     setBackendStatus("Live", true);
 
     renderPortfolioSummary();
-    renderHoldingsTable();
     renderAccountsList();
-
+    renderHoldingsTable();
   } catch (error) {
     console.error("Portfolio fetch failed:", error);
 
     livePortfolio = null;
 
     renderPortfolioSummary();
-    renderHoldingsTable();
     renderAccountsList();
+    renderHoldingsTable();
   }
 }
 
-function setClass(id, className) {
-  const element = document.getElementById(id);
+function getPortfolioValue(keyList, fallback = 0) {
+  if (!livePortfolio) return fallback;
 
-  if (element) {
-    element.className = className;
-  }
-}
-
-/* WATCHLIST */
-
-function addTickerToWatchlist(ticker) {
-  if (watchlist.includes(ticker)) {
-    return;
+  for (const key of keyList) {
+    if (livePortfolio[key] !== undefined && livePortfolio[key] !== null) {
+      return Number(livePortfolio[key]) || 0;
+    }
   }
 
-  watchlist.push(ticker);
-  saveToStorage(STORAGE_KEYS.watchlist, watchlist);
-
-  renderAll();
-  fetchQuotes();
+  return fallback;
 }
 
-function removeTickerFromWatchlist(ticker) {
-  watchlist = watchlist.filter((item) => item !== ticker);
-  delete quotes[ticker];
+function getLiveHoldings() {
+  if (!livePortfolio) return [];
 
-  saveToStorage(STORAGE_KEYS.watchlist, watchlist);
-
-  renderAll();
-  fetchQuotes();
-}
-
-/* MAIN RENDER */
-
-function renderAll() {
-  renderPortfolioSummary();
-  renderQuoteGrid();
-  renderWatchlistTable();
-  renderAccountsList();
-  renderBrokerCards();
-  renderHoldingsTable();
-  renderOptions();
-  renderRiskAnalysis();
-  renderPendingTrade();
-  renderApprovalHistory();
-  renderJournalEntries();
-  renderGoal();
-}
-
-/* QUOTES DISPLAY */
-
-function renderQuoteGrid() {
-  const quoteGrid = document.getElementById("quoteGrid");
-
-  if (!quoteGrid) {
-    return;
-  }
-
-  if (!watchlist.length) {
-    quoteGrid.innerHTML = `
-      <p class="muted">
-        No tickers yet. Add one above to start tracking live quotes.
-      </p>
-    `;
-    return;
-  }
-
-  quoteGrid.innerHTML = watchlist.map((ticker) => {
-    const quote = quotes[ticker] || {};
-    const price = getQuotePrice(quote);
-    const change = getQuoteChange(quote);
-    const percent = getQuotePercent(quote);
-    const changeClass = getChangeClass(change);
-
-    return `
-      <article class="quote-card">
-        <div class="quote-card-header">
-          <h4>${ticker}</h4>
-          <button onclick="removeTickerFromWatchlist('${ticker}')">
-            Remove
-          </button>
-        </div>
-
-        <div class="quote-price">
-          ${price ? formatCurrency(price) : "Loading..."}
-        </div>
-
-        <div class="quote-change ${changeClass}">
-          ${formatCurrency(change)} / ${formatPercent(percent)}
-        </div>
-
-        <small class="muted">
-          Source: ${quote.source || "Backend"}
-        </small>
-      </article>
-    `;
-  }).join("");
-}
-
-function renderWatchlistTable() {
-  const watchlistTable = document.getElementById("watchlistTable");
-
-  if (!watchlistTable) {
-    return;
-  }
-
-  if (!watchlist.length) {
-    watchlistTable.innerHTML = `
-      <p class="muted">
-        Your watchlist is empty.
-      </p>
-    `;
-    return;
-  }
-
-  watchlistTable.innerHTML = watchlist.map((ticker) => {
-    const quote = quotes[ticker] || {};
-    const price = getQuotePrice(quote);
-    const change = getQuoteChange(quote);
-    const percent = getQuotePercent(quote);
-    const changeClass = getChangeClass(change);
-
-    return `
-      <div class="table-row">
-        <strong>${ticker}</strong>
-
-        <span>
-          ${price ? formatCurrency(price) : "Loading..."}
-        </span>
-
-        <span class="${changeClass}">
-          ${formatCurrency(change)} / ${formatPercent(percent)}
-        </span>
-
-        <button onclick="removeTickerFromWatchlist('${ticker}')">
-          Remove
-        </button>
-      </div>
-    `;
-  }).join("");
-}
-
-function getQuotePrice(quote) {
-  return Number(
-    quote.price ||
-    quote.last_price ||
-    quote.mark_price ||
-    quote.lastTradePrice ||
-    quote.regularMarketPrice ||
-    0
+  return safeArray(
+    livePortfolio.holdings ||
+    livePortfolio.positions ||
+    livePortfolio.securities ||
+    livePortfolio.accounts?.[0]?.holdings ||
+    livePortfolio.accounts?.[0]?.positions ||
+    []
   );
 }
-
-function getQuoteChange(quote) {
-  return Number(
-    quote.change ||
-    quote.price_change ||
-    quote.regularMarketChange ||
-    0
-  );
-}
-
-function getQuotePercent(quote) {
-  return Number(
-    quote.changePercent ||
-    quote.change_percent ||
-    quote.regularMarketChangePercent ||
-    0
-  );
-}
-
-/* PORTFOLIO SUMMARY */
 
 function renderPortfolioSummary() {
-  if (livePortfolio) {
-    const p = livePortfolio;
+  const totalValue = getPortfolioValue(
+    ["total_value", "totalValue", "balance", "equity"],
+    52341.87
+  );
 
-    setText("portfolioValue", formatCurrency(p.total_value));
-    setText("buyingPower", formatCurrency(p.buying_power));
-    setText("cash", formatCurrency(p.cash));
-    setText("dailyPL", formatCurrency(p.day_change));
-    setText("dailyPercent", formatPercent(p.day_change_percent));
-    setText("openPositions", p.open_positions || 4);
-    setText("accountCount", "1 account connected");
-    setText("portfolioSource", "live");
+  const buyingPower = getPortfolioValue(
+    ["buying_power", "buyingPower"],
+    3241.56
+  );
 
-    setClass("dailyPL", getChangeClass(p.day_change));
-    setClass("dailyPercent", getChangeClass(p.day_change));
+  const cash = getPortfolioValue(
+    ["cash", "cash_balance"],
+    3241.56
+  );
 
-    return;
-  }
+  const investedValue = getPortfolioValue(
+    ["invested_value", "investedValue"],
+    totalValue - cash
+  );
 
-  const demoPortfolioValue = 52341.87;
-  const demoBuyingPower = 3241.56;
-  const demoCash = 3241.56;
-  const demoDailyPL = 412.34;
-  const demoDailyPercent = 0.79;
+  const dayChange = getPortfolioValue(
+    ["day_change", "dailyChange", "dayChange"],
+    412.34
+  );
 
-  setText("portfolioValue", formatCurrency(demoPortfolioValue));
-  setText("buyingPower", formatCurrency(demoBuyingPower));
-  setText("cash", formatCurrency(demoCash));
-  setText("dailyPL", formatCurrency(demoDailyPL));
-  setText("dailyPercent", formatPercent(demoDailyPercent));
-  setText("openPositions", 4);
-  setText("accountCount", "0 accounts connected");
-  setText("portfolioSource", "demo");
+  const dayChangePercent = getPortfolioValue(
+    ["day_change_percent", "dailyPercent", "dayChangePercent"],
+    0.79
+  );
 
-  setClass("dailyPL", getChangeClass(demoDailyPL));
-  setClass("dailyPercent", getChangeClass(demoDailyPL));
+  const holdings = getLiveHoldings();
+
+  setText("portfolioValue", formatCurrency(totalValue));
+  setText("buyingPower", formatCurrency(buyingPower));
+  setText("cash", formatCurrency(cash));
+  setText("dailyPL", formatCurrency(dayChange));
+  setText("dailyPercent", formatPercent(dayChangePercent));
+  setText("openPositions", holdings.length || livePortfolio?.open_positions || 4);
+  setText("accountCount", livePortfolio ? "1 account connected" : "0 accounts connected");
+  setText("portfolioSource", livePortfolio ? "live" : "demo");
+
+  setClass("dailyPL", getChangeClass(dayChange));
+  setClass("dailyPercent", getChangeClass(dayChange));
+
+  setText("investedValue", formatCurrency(investedValue));
 }
 
 /* ACCOUNTS */
@@ -625,56 +508,42 @@ function renderPortfolioSummary() {
 function renderAccountsList() {
   const accountsList = document.getElementById("accountsList");
 
-  if (!accountsList) {
-    return;
-  }
+  if (!accountsList) return;
 
   if (livePortfolio) {
+    const accountName = livePortfolio.account_name || "Robinhood";
+    const totalValue = getPortfolioValue(["total_value", "totalValue", "balance", "equity"]);
+    const buyingPower = getPortfolioValue(["buying_power", "buyingPower"]);
+    const cash = getPortfolioValue(["cash", "cash_balance"]);
+
     accountsList.innerHTML = `
       <article class="account-card">
-        <h4>${livePortfolio.account_name || "Robinhood"}</h4>
+        <h4>${accountName}</h4>
 
         <span class="status-pill status-connected">
           Connected
         </span>
 
-        <p>
-          Balance: <strong>${formatCurrency(livePortfolio.total_value)}</strong>
-        </p>
-
-        <p>
-          Buying Power: <strong>${formatCurrency(livePortfolio.buying_power)}</strong>
-        </p>
-
-        <p>
-          Cash: <strong>${formatCurrency(livePortfolio.cash)}</strong>
-        </p>
+        <p>Balance: <strong>${formatCurrency(totalValue)}</strong></p>
+        <p>Buying Power: <strong>${formatCurrency(buyingPower)}</strong></p>
+        <p>Cash: <strong>${formatCurrency(cash)}</strong></p>
       </article>
     `;
 
     return;
   }
 
-  accountsList.innerHTML = connectedAccounts.map((account) => {
-    const connected = account.status === "Connected";
-
+  accountsList.innerHTML = brokers.map((broker) => {
     return `
       <article class="account-card">
-        <h4>${account.name}</h4>
+        <h4>${broker.name}</h4>
 
-        <span class="status-pill ${
-          connected ? "status-connected" : "status-disconnected"
-        }">
-          ${account.status}
+        <span class="status-pill status-disconnected">
+          Not Connected
         </span>
 
-        <p>
-          Balance: <strong>${formatCurrency(account.balance)}</strong>
-        </p>
-
-        <p>
-          Buying Power: <strong>${formatCurrency(account.buyingPower)}</strong>
-        </p>
+        <p>Balance: <strong>$0.00</strong></p>
+        <p>Buying Power: <strong>$0.00</strong></p>
       </article>
     `;
   }).join("");
@@ -683,16 +552,16 @@ function renderAccountsList() {
 function renderBrokerCards() {
   const brokerCards = document.getElementById("brokerCards");
 
-  if (!brokerCards) {
-    return;
-  }
+  if (!brokerCards) return;
 
-  brokerCards.innerHTML = connectedAccounts.map((account) => {
-    const connected = account.status === "Connected";
+  brokerCards.innerHTML = brokers.map((broker) => {
+    const connected =
+      livePortfolio &&
+      broker.id === "robinhood";
 
     return `
       <article class="broker-card">
-        <h4>${account.name}</h4>
+        <h4>${broker.name}</h4>
 
         <span class="status-pill ${
           connected ? "status-connected" : "status-coming"
@@ -704,7 +573,7 @@ function renderBrokerCards() {
           Secure account linking will run through Plaid Link.
         </p>
 
-        <button onclick="connectBroker('${account.id}')">
+        <button onclick="connectBroker('${broker.id}')">
           ${connected ? "Sync Account" : "Connect"}
         </button>
       </article>
@@ -713,13 +582,17 @@ function renderBrokerCards() {
 }
 
 function connectBroker(accountId) {
-  const account = connectedAccounts.find((item) => item.id === accountId);
+  const broker = brokers.find((item) => item.id === accountId);
 
-  if (!account) {
+  if (!broker) return;
+
+  if (broker.id === "robinhood" && livePortfolio) {
+    fetchPortfolio();
+    alert("Robinhood sync started.");
     return;
   }
 
-  alert(`${account.name} connection is ready for the Plaid backend step.`);
+  alert(`${broker.name} connection is ready for the Plaid backend step.`);
 }
 
 function showPlaidPlaceholder() {
@@ -731,37 +604,30 @@ function showPlaidPlaceholder() {
 function renderHoldingsTable() {
   const holdingsTable = document.getElementById("holdingsTable");
 
-  if (!holdingsTable) {
-    return;
-  }
+  if (!holdingsTable) return;
 
-  const liveHoldings =
-    livePortfolio?.holdings ||
-    livePortfolio?.positions ||
-    livePortfolio?.data?.holdings ||
-    livePortfolio?.data?.positions ||
-    [];
+  const holdings = getLiveHoldings();
 
   if (!livePortfolio) {
     holdingsTable.innerHTML = `
       <p class="muted">
-        Portfolio is loading...
+        Portfolio is loading. If this stays here, the backend portfolio endpoint is offline.
       </p>
     `;
     return;
   }
 
-  if (!liveHoldings.length) {
+  if (!holdings.length) {
     holdingsTable.innerHTML = `
       <p class="muted">
-        Portfolio totals are live, but the backend is not sending holdings yet.
-        Next step is updating the Replit /api/portfolio endpoint to include positions.
+        Portfolio totals are live, but holdings are not being sent from the backend yet.
+        Next step is updating Replit /api/portfolio so it includes positions.
       </p>
     `;
     return;
   }
 
-  holdingsTable.innerHTML = liveHoldings.map((holding) => {
+  holdingsTable.innerHTML = holdings.map((holding) => {
     const symbol = normalizeTicker(
       holding.symbol ||
       holding.ticker ||
@@ -786,13 +652,14 @@ function renderHoldingsTable() {
       0
     );
 
+    const quote = quotes[symbol] || {};
+
     const currentPrice = Number(
       holding.current_price ||
       holding.price ||
       holding.last_price ||
       holding.market_price ||
-      quotes[symbol]?.price ||
-      quotes[symbol]?.last_price ||
+      getQuotePrice(quote) ||
       0
     );
 
@@ -805,29 +672,16 @@ function renderHoldingsTable() {
     );
 
     const totalCost = quantity * avgCost;
-    const totalPL = marketValue - totalCost;
+    const totalPL = avgCost ? marketValue - totalCost : 0;
     const totalPLPercent = totalCost ? (totalPL / totalCost) * 100 : 0;
 
     return `
       <div class="table-row">
         <strong>${symbol}</strong>
-
-        <span>
-          ${quantity.toLocaleString()} shares
-        </span>
-
-        <span>
-          Avg: ${avgCost ? formatCurrency(avgCost) : "--"}
-        </span>
-
-        <span>
-          Current: ${currentPrice ? formatCurrency(currentPrice) : "--"}
-        </span>
-
-        <span>
-          Value: ${formatCurrency(marketValue)}
-        </span>
-
+        <span>${quantity.toLocaleString()} shares</span>
+        <span>Avg: ${avgCost ? formatCurrency(avgCost) : "--"}</span>
+        <span>Current: ${currentPrice ? formatCurrency(currentPrice) : "--"}</span>
+        <span>Value: ${formatCurrency(marketValue)}</span>
         <span class="${getChangeClass(totalPL)}">
           ${formatCurrency(totalPL)} / ${formatPercent(totalPLPercent)}
         </span>
@@ -836,12 +690,96 @@ function renderHoldingsTable() {
   }).join("");
 }
 
-  holdingsTable.innerHTML = `
-    <p class="muted">
-      No live holdings found yet. Portfolio totals are connected, but the backend
-      is not sending holdings/positions data yet.
-    </p>
-  `;
+/* WATCHLIST */
+
+function addTickerToWatchlist(ticker) {
+  if (watchlist.includes(ticker)) return;
+
+  watchlist.push(ticker);
+  saveToStorage(STORAGE_KEYS.watchlist, watchlist);
+
+  renderQuoteGrid();
+  renderWatchlistTable();
+  fetchQuotes();
+}
+
+function removeTickerFromWatchlist(ticker) {
+  watchlist = watchlist.filter((item) => item !== ticker);
+  delete quotes[ticker];
+
+  saveToStorage(STORAGE_KEYS.watchlist, watchlist);
+
+  renderQuoteGrid();
+  renderWatchlistTable();
+  fetchQuotes();
+}
+
+function renderQuoteGrid() {
+  const quoteGrid = document.getElementById("quoteGrid");
+
+  if (!quoteGrid) return;
+
+  if (!watchlist.length) {
+    quoteGrid.innerHTML = `<p class="muted">No tickers yet.</p>`;
+    return;
+  }
+
+  quoteGrid.innerHTML = watchlist.map((ticker) => {
+    const quote = quotes[ticker] || {};
+    const price = getQuotePrice(quote);
+    const change = getQuoteChange(quote);
+    const percent = getQuotePercent(quote);
+
+    return `
+      <article class="quote-card">
+        <div class="quote-card-header">
+          <h4>${ticker}</h4>
+          <button onclick="removeTickerFromWatchlist('${ticker}')">Remove</button>
+        </div>
+
+        <div class="quote-price">
+          ${price ? formatCurrency(price) : "Loading..."}
+        </div>
+
+        <div class="quote-change ${getChangeClass(change)}">
+          ${formatCurrency(change)} / ${formatPercent(percent)}
+        </div>
+
+        <small class="muted">
+          Source: ${quote.source || "Backend"}
+        </small>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderWatchlistTable() {
+  const watchlistTable = document.getElementById("watchlistTable");
+
+  if (!watchlistTable) return;
+
+  if (!watchlist.length) {
+    watchlistTable.innerHTML = `<p class="muted">Your watchlist is empty.</p>`;
+    return;
+  }
+
+  watchlistTable.innerHTML = watchlist.map((ticker) => {
+    const quote = quotes[ticker] || {};
+    const price = getQuotePrice(quote);
+    const change = getQuoteChange(quote);
+    const percent = getQuotePercent(quote);
+
+    return `
+      <div class="table-row">
+        <strong>${ticker}</strong>
+        <span>${price ? formatCurrency(price) : "Loading..."}</span>
+        <span class="${getChangeClass(change)}">
+          ${formatCurrency(change)} / ${formatPercent(percent)}
+        </span>
+        <button onclick="removeTickerFromWatchlist('${ticker}')">Remove</button>
+      </div>
+    `;
+  }).join("");
 }
 
 /* OPTIONS */
@@ -851,13 +789,8 @@ function renderOptions() {
     return sum + getOptionPL(option);
   }, 0);
 
-  const winningTrades = sampleOptions.filter((option) => {
-    return getOptionPL(option) > 0;
-  }).length;
-
-  const winRate = sampleOptions.length
-    ? (winningTrades / sampleOptions.length) * 100
-    : 0;
+  const winners = sampleOptions.filter((option) => getOptionPL(option) > 0).length;
+  const winRate = sampleOptions.length ? (winners / sampleOptions.length) * 100 : 0;
 
   setText("optionContracts", getTotalContracts());
   setText("optionsPL", formatCurrency(totalPL));
@@ -866,20 +799,17 @@ function renderOptions() {
 
   const openOptionsTable = document.getElementById("openOptionsTable");
 
-  if (!openOptionsTable) {
-    return;
-  }
+  if (!openOptionsTable) return;
 
   openOptionsTable.innerHTML = sampleOptions.map((option) => {
     const pl = getOptionPL(option);
-    const plClass = getChangeClass(pl);
 
     return `
       <div class="table-row">
         <strong>${option.ticker} ${option.type}</strong>
         <span>$${option.strike} / ${option.expiration}</span>
         <span>${option.contracts} contracts</span>
-        <span class="${plClass}">${formatCurrency(pl)}</span>
+        <span class="${getChangeClass(pl)}">${formatCurrency(pl)}</span>
       </div>
     `;
   }).join("");
@@ -902,13 +832,8 @@ function getTotalContracts() {
 function calculateRiskScore() {
   const contracts = getTotalContracts();
 
-  if (contracts >= 10) {
-    return 85;
-  }
-
-  if (contracts >= 5) {
-    return 62;
-  }
+  if (contracts >= 10) return 85;
+  if (contracts >= 5) return 62;
 
   return 38;
 }
@@ -916,9 +841,7 @@ function calculateRiskScore() {
 function renderRiskAnalysis() {
   const riskAnalysisBox = document.getElementById("riskAnalysisBox");
 
-  if (!riskAnalysisBox) {
-    return;
-  }
+  if (!riskAnalysisBox) return;
 
   const score = calculateRiskScore();
 
@@ -934,20 +857,18 @@ function renderRiskAnalysis() {
     <p><strong>Current Risk Score:</strong> ${score}</p>
     <p>${message}</p>
     <p class="muted">
-      This is placeholder logic for now. Later, it can use options Greeks,
-      expiration dates, account size, and max-loss rules.
+      Placeholder logic for now. Later this will use Greeks, expiration,
+      account size, and max-loss rules.
     </p>
   `;
 }
 
-/* TRADE APPROVAL */
+/* APPROVALS */
 
 function renderPendingTrade() {
   const trade = pendingTrades[currentPendingIndex];
 
-  if (!trade) {
-    return;
-  }
+  if (!trade) return;
 
   setText("approvalTicker", trade.ticker);
   setText("approvalDescription", trade.description);
@@ -956,18 +877,15 @@ function renderPendingTrade() {
 function handleTradeApproval(status) {
   const trade = pendingTrades[currentPendingIndex];
 
-  if (!trade) {
-    return;
-  }
+  if (!trade) return;
 
-  const record = {
+  approvalHistory.unshift({
     ticker: trade.ticker,
     description: trade.description,
     status,
     date: new Date().toLocaleString()
-  };
+  });
 
-  approvalHistory.unshift(record);
   saveToStorage(STORAGE_KEYS.approvals, approvalHistory);
 
   currentPendingIndex = (currentPendingIndex + 1) % pendingTrades.length;
@@ -979,14 +897,10 @@ function handleTradeApproval(status) {
 function renderApprovalHistory() {
   const approvalHistoryBox = document.getElementById("approvalHistory");
 
-  if (!approvalHistoryBox) {
-    return;
-  }
+  if (!approvalHistoryBox) return;
 
   if (!approvalHistory.length) {
-    approvalHistoryBox.innerHTML = `
-      <p class="muted">No approval history yet.</p>
-    `;
+    approvalHistoryBox.innerHTML = `<p class="muted">No approval history yet.</p>`;
     return;
   }
 
@@ -1011,9 +925,7 @@ function saveJournalEntry() {
   const strategyInput = document.getElementById("journalStrategy");
   const resultInput = document.getElementById("journalResult");
 
-  if (!tickerInput || !strategyInput || !resultInput) {
-    return;
-  }
+  if (!tickerInput || !strategyInput || !resultInput) return;
 
   const ticker = normalizeTicker(tickerInput.value);
   const strategy = strategyInput.value.trim();
@@ -1024,15 +936,14 @@ function saveJournalEntry() {
     return;
   }
 
-  const entry = {
+  tradeJournal.unshift({
     id: Date.now(),
     ticker,
     strategy,
     result,
     date: new Date().toLocaleString()
-  };
+  });
 
-  tradeJournal.unshift(entry);
   saveToStorage(STORAGE_KEYS.journal, tradeJournal);
 
   tickerInput.value = "";
@@ -1045,14 +956,10 @@ function saveJournalEntry() {
 function renderJournalEntries() {
   const journalEntries = document.getElementById("journalEntries");
 
-  if (!journalEntries) {
-    return;
-  }
+  if (!journalEntries) return;
 
   if (!tradeJournal.length) {
-    journalEntries.innerHTML = `
-      <p class="muted">No journal entries yet.</p>
-    `;
+    journalEntries.innerHTML = `<p class="muted">No journal entries yet.</p>`;
     return;
   }
 
@@ -1071,10 +978,7 @@ function renderJournalEntries() {
 }
 
 function deleteJournalEntry(id) {
-  tradeJournal = tradeJournal.filter((entry) => {
-    return entry.id !== id;
-  });
-
+  tradeJournal = tradeJournal.filter((entry) => entry.id !== id);
   saveToStorage(STORAGE_KEYS.journal, tradeJournal);
   renderJournalEntries();
 }
@@ -1084,9 +988,7 @@ function deleteJournalEntry(id) {
 function savePortfolioGoal() {
   const goalInput = document.getElementById("goalInput");
 
-  if (!goalInput) {
-    return;
-  }
+  if (!goalInput) return;
 
   const goal = Number(goalInput.value);
 
@@ -1102,41 +1004,10 @@ function savePortfolioGoal() {
 function renderGoal() {
   const goalInput = document.getElementById("goalInput");
 
-  if (!goalInput) {
-    return;
-  }
+  if (!goalInput) return;
 
   const savedGoal = loadFromStorage(STORAGE_KEYS.goal, "");
   goalInput.value = savedGoal || "";
-}
-
-/* BACKEND */
-
-async function checkBackendHealth() {
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/quotes?symbols=AAPL`);
-
-    if (!response.ok) {
-      throw new Error("Backend health failed");
-    }
-
-    setBackendStatus("Live", true);
-    setText("backendHealthStatus", "Backend is live.");
-  } catch (error) {
-    console.error("Backend health check failed:", error);
-
-    setBackendStatus("Offline", false);
-    setText("backendHealthStatus", "Backend is offline or blocked.");
-  }
-}
-
-function setBackendStatus(status, isLive) {
-  const backendStatus = document.getElementById("backendStatus");
-
-  if (backendStatus) {
-    backendStatus.textContent = status;
-    backendStatus.className = isLive ? "positive" : "negative";
-  }
 }
 
 /* NOTIFICATIONS */
@@ -1176,10 +1047,8 @@ function sendTestNotification() {
 async function fetchAiCommandCenter() {
   try {
     const response = await fetch(`${BACKEND_URL}/api/ai/command-center`);
-    console.log(response.status);
     const result = await response.json();
-    console.log("AI COMMAND:", result);
-    
+
     if (!result.success || !result.data) {
       throw new Error("AI command center failed");
     }
@@ -1197,9 +1066,7 @@ function renderAiCommandCenter() {
   const summaryBox = document.getElementById("aiCommandSummary");
   const alertsBox = document.getElementById("aiCommandAlerts");
 
-  if (!summaryBox || !alertsBox) {
-    return;
-  }
+  if (!summaryBox || !alertsBox) return;
 
   if (!aiCommandCenter) {
     setText("aiConfidenceScore", "--");
@@ -1207,10 +1074,7 @@ function renderAiCommandCenter() {
 
     summaryBox.textContent = "AI Command Center is unavailable.";
 
-    alertsBox.innerHTML = `
-      <p class="muted">No AI alerts available.</p>
-    `;
-
+    alertsBox.innerHTML = `<p class="muted">No AI alerts available.</p>`;
     return;
   }
 
@@ -1222,9 +1086,7 @@ function renderAiCommandCenter() {
   const alerts = aiCommandCenter.alerts || [];
 
   if (!alerts.length) {
-    alertsBox.innerHTML = `
-      <p class="muted">No AI alerts available.</p>
-    `;
+    alertsBox.innerHTML = `<p class="muted">No AI alerts available.</p>`;
     return;
   }
 
@@ -1238,13 +1100,10 @@ function renderAiCommandCenter() {
     return `
       <article class="approval-item">
         <strong>${title}</strong>
-
         <p>Category: ${alert.category}</p>
         <p>Confidence: <strong>${alert.confidence}%</strong></p>
         <p>Risk: <strong>${alert.risk}</strong></p>
-
         <p class="muted">${alert.reason}</p>
-
         <button onclick="addCommandAlertToApprovalQueue(${index})">
           Add to Approval Queue
         </button>
@@ -1254,15 +1113,11 @@ function renderAiCommandCenter() {
 }
 
 function addCommandAlertToApprovalQueue(index) {
-  if (!aiCommandCenter || !aiCommandCenter.alerts) {
-    return;
-  }
+  if (!aiCommandCenter || !aiCommandCenter.alerts) return;
 
   const alert = aiCommandCenter.alerts[index];
 
-  if (!alert) {
-    return;
-  }
+  if (!alert) return;
 
   const isOption = alert.type === "CALL" || alert.type === "PUT";
 
@@ -1278,11 +1133,8 @@ function addCommandAlertToApprovalQueue(index) {
   currentPendingIndex = 0;
   renderPendingTrade();
 
-  window.alert(`${alert.ticker} added to approval queue.`);
+  alert(`${alert.ticker} added to approval queue.`);
 }
-
-
-
 
 
 
