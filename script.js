@@ -388,6 +388,10 @@ async function fetchPortfolio() {
 
     livePortfolio = result.data;
 
+    console.log("LIVE PORTFOLIO DATA:", livePortfolio);
+console.log("LIVE HOLDINGS:", livePortfolio.holdings || livePortfolio.positions);
+    
+
     setBackendStatus("Live", true);
 
     renderPortfolioSummary();
@@ -734,28 +738,103 @@ function renderHoldingsTable() {
   const liveHoldings =
     livePortfolio?.holdings ||
     livePortfolio?.positions ||
-    livePortfolio?.securities ||
+    livePortfolio?.data?.holdings ||
+    livePortfolio?.data?.positions ||
     [];
 
-  if (liveHoldings.length) {
-    holdingsTable.innerHTML = liveHoldings.map((holding) => {
-      const symbol = holding.symbol || holding.ticker || holding.instrument || "Unknown";
-      const quantity = holding.quantity || holding.shares || holding.qty || 0;
-      const value = holding.value || holding.market_value || holding.equity || 0;
-      const accountName = holding.account || holding.account_name || "Robinhood";
-
-      return `
-        <div class="table-row">
-          <strong>${symbol}</strong>
-          <span>${accountName}</span>
-          <span>${quantity} shares</span>
-          <span>${formatCurrency(value)}</span>
-        </div>
-      `;
-    }).join("");
-
+  if (!livePortfolio) {
+    holdingsTable.innerHTML = `
+      <p class="muted">
+        Portfolio is loading...
+      </p>
+    `;
     return;
   }
+
+  if (!liveHoldings.length) {
+    holdingsTable.innerHTML = `
+      <p class="muted">
+        Portfolio totals are live, but the backend is not sending holdings yet.
+        Next step is updating the Replit /api/portfolio endpoint to include positions.
+      </p>
+    `;
+    return;
+  }
+
+  holdingsTable.innerHTML = liveHoldings.map((holding) => {
+    const symbol = normalizeTicker(
+      holding.symbol ||
+      holding.ticker ||
+      holding.instrument ||
+      holding.name ||
+      "UNKNOWN"
+    );
+
+    const quantity = Number(
+      holding.quantity ||
+      holding.shares ||
+      holding.qty ||
+      holding.units ||
+      0
+    );
+
+    const avgCost = Number(
+      holding.average_cost ||
+      holding.avg_cost ||
+      holding.average_buy_price ||
+      holding.cost_basis_per_share ||
+      0
+    );
+
+    const currentPrice = Number(
+      holding.current_price ||
+      holding.price ||
+      holding.last_price ||
+      holding.market_price ||
+      quotes[symbol]?.price ||
+      quotes[symbol]?.last_price ||
+      0
+    );
+
+    const marketValue = Number(
+      holding.market_value ||
+      holding.value ||
+      holding.equity ||
+      quantity * currentPrice ||
+      0
+    );
+
+    const totalCost = quantity * avgCost;
+    const totalPL = marketValue - totalCost;
+    const totalPLPercent = totalCost ? (totalPL / totalCost) * 100 : 0;
+
+    return `
+      <div class="table-row">
+        <strong>${symbol}</strong>
+
+        <span>
+          ${quantity.toLocaleString()} shares
+        </span>
+
+        <span>
+          Avg: ${avgCost ? formatCurrency(avgCost) : "--"}
+        </span>
+
+        <span>
+          Current: ${currentPrice ? formatCurrency(currentPrice) : "--"}
+        </span>
+
+        <span>
+          Value: ${formatCurrency(marketValue)}
+        </span>
+
+        <span class="${getChangeClass(totalPL)}">
+          ${formatCurrency(totalPL)} / ${formatPercent(totalPLPercent)}
+        </span>
+      </div>
+    `;
+  }).join("");
+}
 
   holdingsTable.innerHTML = `
     <p class="muted">
