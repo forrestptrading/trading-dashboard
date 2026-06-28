@@ -170,15 +170,20 @@
           <div id="accountsList" class="card-grid"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel broker-panel">
           <div class="panel-header">
             <div>
               <h3>Broker Connections</h3>
-              <p>Robinhood, SoFi, Fidelity, Schwab, and Webull framework.</p>
+              <p>Connect brokerages, use demo mode, or prepare Plaid sync.</p>
             </div>
+            <button class="secondary-btn" id="refreshBrokerConnectionsBtn">Refresh Brokers</button>
           </div>
 
-          <div id="brokerCards" class="card-grid"></div>
+          <div id="brokerConnectionMessage" class="broker-message">
+            Plaid sync is not configured yet. Demo Connect is available.
+          </div>
+
+          <div id="brokerCards" class="card-grid broker-grid"></div>
         </section>
       </section>
 
